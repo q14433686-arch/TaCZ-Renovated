@@ -1,9 +1,12 @@
-# 26.2 R2 发布检查清单
+# 26.2 R2 发布检查清单（归档）
+
+> R2 已发布（2026-09-01）。R3（`1.1.8+neoforge.26.2.R3`，2026-09-07）发布流程见
+> [`docs/publish/RELEASE.md`](publish/RELEASE.md)；本页作为 R2 发版时的检查档案保留，
+> 其中的历史矩阵项不在本文复述为 R3 状态（发布封口以 CHANGELOG / docs/records 为准）。
 
 目标版本：`1.1.8+neoforge.26.2.R2`。R1 的归档清单见
 [`records/RELEASE_CHECKLIST_26_2_R1.md`](records/RELEASE_CHECKLIST_26_2_R1.md)（未关闭项
-已结转进本页）。本页全部阻塞项关闭 **且** 收到项目发起人明确发布命令之前，CHANGELOG
-的 R2 条目不得视为已发布。
+已结转进本页）。
 
 ## A. 版本与构建
 
