@@ -13,6 +13,19 @@
 
 ### 修复
 
+- **第三方枪包脚本一用 `string.*` 就崩服**（用户报告：Phoenix Gunpack
+  `ra1k_gun_logic:216 attempt to index ? (a nil value)`，持枪即 `Ticking player`
+  崩溃循环；官方 TaCZ 1.1.8 上同一枪包正常）：移植 `ScriptManager` 时把
+  Lua `string` 库的加载行丢了——官方在同位加载 Figura fork luaj 的
+  `JseStringLib`，本线内置上游 luaj-jse-3.0.1 没有该类（疑似当初因此编译不过
+  连行带库一起删），导致脚本环境里根本没有 `string` 表。修复：在
+  `secureStandardGlobals` 官方同位补 `globals.load(new StringLib())`
+  （上游 3.0.1 的等价类，上游 `JsePlatform#standardGlobals` 同位同惯用法），
+  `string` 表与字符串元表一并恢复；自带默认枪包脚本不用 `string.*`
+  （grep 零命中）故 R1/R2 实测未暴露。安全边界不变（仍无
+  Coroutine/Io/Os/Luajava）。证据与验收清单见
+  [`docs/records/SCRIPT_STRINGLIB_RESTORE_20260907.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_20260907.md)。
+  **编译门走 CI；运行期未实机验证。**
 - **创造模式搜索栏搜不到任何物品**（1.21.11 / 26.2 线复现，26.1.2 线正常）：
   `onSyncGunPack` 收到枪包同步后只调了静态
   `CreativeModeTabs.tryRebuildTabContents` 重建各标签页展示列表、**没有**重建
