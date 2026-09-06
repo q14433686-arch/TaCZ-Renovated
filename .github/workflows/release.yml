@@ -1,0 +1,80 @@
+# 发布 workflow（26.2 线，R3 起自动化 RELEASE.md §2 第 3/4 步）：
+#   checkout 指定 tag → gradle build → L0 静态自检（发布门）→ GitHub Release 挂 jar。
+# jar 只在 GitHub 侧构建与上传，本地/沙箱无需下载 CI 产物。
+# 用法：先 push tag，再 `gh workflow run release -f tag=<tag> -f title=<标题>`。
+# 正文取 docs/publish/RELEASE_NOTES.md（每次发版更新）。
+
+name: release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '已存在的 tag（例如 26.2_R3）'
+        required: true
+      title:
+        description: 'Release 标题'
+        required: false
+
+concurrency:
+  group: release-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: build
+        run: ./gradlew build --console=plain --stacktrace --no-daemon
+
+      - name: L0 static checks (release gate)
+        run: |
+          set -euo pipefail
+          JAR=$(ls build/libs/*.jar | grep -v '\-sources' | head -1)
+          echo "jar: $JAR"
+          V="$(grep -E '^mod_version=' gradle.properties | head -1 | cut -d= -f2-)"
+          echo "mod_version: $V"
+          case "$JAR" in *"$V"*) ;; *) echo "::error::jar 文件名不含当前版本串 $V"; exit 1;; esac
+          # jarJar 内嵌库（luaj + commons-math3，真实启动器 NoClassDefFoundError 防线）
+          unzip -l "$JAR" | grep -q 'META-INF/jarjar/.*luaj.*\.jar'
+          unzip -l "$JAR" | grep -q 'META-INF/jarjar/.*commons-math3.*\.jar'
+          # mods.toml 版本串与 gradle.properties 一致
+          unzip -l "$JAR" | grep -q 'META-INF/neoforge.mods.toml'
+          unzip -p "$JAR" META-INF/neoforge.mods.toml | grep -Fq "version=\"${V}\""
+          # mixin json 与磁盘清单一一对应（0 缺失）
+          for f in src/main/resources/*mixins*.json; do
+            b="$(basename "$f")"
+            unzip -l "$JAR" | grep -q "$b" || { echo "::error::jar 缺 mixin 配置 $b"; exit 1; }
+          done
+          # AT 在
+          unzip -p "$JAR" META-INF/accesstransformer.cfg > /dev/null
+          # 版本一致性门禁（AGENTS §1）
+          bash scripts/check_release_consistency.sh --strict
+          echo "L0 全部通过"
+
+      - name: create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag }}
+          TITLE: ${{ github.event.inputs.title }}
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v '\-sources' | head -1)
+          ARGS=(--verify-tag --tag-name "$TAG" "$JAR")
+          [ -n "$TITLE" ] && ARGS+=(--title "$TITLE")
+          [ -f docs/publish/RELEASE_NOTES.md ] && ARGS+=(--notes-file docs/publish/RELEASE_NOTES.md)
+          gh release create "${ARGS[@]}"
