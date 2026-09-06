@@ -3,9 +3,39 @@
 版本号格式：`1.1.8+neoforge.<mc>.<标签>`。`+` 后是 SemVer build metadata，不参与
 `>=1.1.8` 排序；禁止改用 `-neoforge...` pre-release。
 
-## Unreleased
+## 1.1.8+neoforge.26.2.R3 — 2026-09-07
 
-（R2 定名之后的增量写在里；发布时并入下一版条目。）
+R3 为 R2（2026-09-01 发布）之后的三类修复热修：①枪包脚本环境缺 Lua `string`
+库（第三方包 `string.*` 即崩服）；②创造模式搜索栏搜不到任何物品；③开镜
+mesh 枪身裁剪判据时序 + 7 个「静默失效」事件处理器补接线；另含两笔姊妹线/
+权威线同步（mesh/PIP/镜内文字等）。四批修复均经**维护者实机测试 PASS
+（2026-09-07）**；编译门走 CI。
+
+### 修复：第三方枪包脚本一用 `string.*` 就崩服 —— Lua `string` 库缺失（2026-09-06）
+
+- **症状**（第三方枪包，如 [TACZ] Phoenix Gunpack，用户报告）：`Ticking player` →
+  `org.luaj.vm2.LuaError: ra1k_gun_logic:216 attempt to index ? (a nil value)`，持枪即
+  崩、再进世界秒崩循环；同一枪包在官方 TaCZ 1.1.8 上正常。自带默认枪包脚本
+  （tacz_default 与 lrtactical 全部）经 `grep "string\."` 核对**零命中**，故
+  R1/R2 枪包实测从未暴露。
+- **根因**：移植 `ScriptManager` 时丢了官方同位的 Lua `string` 库加载行 —— 官方在该位
+  加载 Figura fork luaj（`3.0.8-figura`）的 `JseStringLib`；本线（与 1.21.11 姊妹线同）
+  因 NeoForge jarJar 不能照搬 Fabric `include`，改 vendor 本地上游
+  `libs/luaj-jse-3.0.1.jar`，上游 3.0.1 **没有** `jse.JseStringLib`（`unzip -l` 核对），
+  照抄官方那行编译不过、连行带库一起删 ⇒ Lua 全局根本没 `string` 表，脚本一访问
+  `string.xxx` / `("…"):format()` 即崩（报错签名即「索引型访问 nil」，非「调用 nil」）。
+- **修法**：`ScriptManager#secureStandardGlobals` 在官方同位补
+  `globals.load(new StringLib())`（上游 3.0.1 的等价类，上游
+  `JsePlatform#standardGlobals` 同位同惯用法；`libs/luaj-jse-3.0.1.jar` 已含
+  `org/luaj/vm2/lib/StringLib` 及 `format/sub/find/gmatch/gsub` 等内部类）；import 增
+  `org.luaj.vm2.lib.StringLib`。`string` 表与字符串元表一并恢复。安全边界不变
+  （仍无 Coroutine/Io/Os/Luajava）。本修自 1.21.11 姊妹线回传（其 commit `47960ae`，
+  分支 `arena/01a07887`），本线与该姊妹线共用的 vendor jar / `ScriptManager`
+  逐字节同源，改动逐字等价。
+- 证据、姊妹三线对照与验收清单见
+  `docs/records/SCRIPT_STRINGLIB_RESTORE_262_20260906.md`。
+  **维护者实机测试 PASS（2026-09-07）**（Phoenix 枪包崩溃场景本线复测通过；
+  姊妹 1.21.11 线同字节修复亦已 PASS）。
 
 ### 修复：创造模式搜索栏搜不到任何物品（含 tacz / lrtactical 全部条目）（2026-09-03）
 
@@ -32,8 +62,8 @@
   后台 tooltip 线程安全、`LanguageMixin`、`TooltipEvent`、日志）、与 1.21.11 姊妹线的
   有意差异及运行期验收清单见
   `docs/records/CREATIVE_SEARCH_SYNC_FIX_262_20260903.md`。
-  同根因同修法已由项目发起人在 1.21.11 线实机测试 PASS；
-  **本线证据级别：静态闭环 + CI 编译门；运行期未实机验证，不宣称已修。**
+  **维护者实机测试 PASS（2026-09-07）**（本线创造搜索场景复测通过；同根因同
+  修法在 1.21.11 线亦已 PASS）。
 
 ### 修复：7 个「静默失效」事件处理器补接线 —— 方法体在、事件总线从未注册（2026-09-02）
 
@@ -65,7 +95,7 @@
 - 逐 API 的 NeoForge 26.2 源码指认（`类#方法(签名)` @ 26.2.x 分支文件:行）、
   四类扫描命令与结果、验收清单见
   `docs/records/WIRE_DEAD_HANDLERS_262_20260902.md`。
-  **证据级别：静态闭环 + CI 编译门；运行期未实机验证，不宣称已修。**
+  **维护者实机测试 PASS（2026-09-07）**。
 
 ### 修复：开镜 mesh 枪身裁剪判据时序 —— 高模枪身/配件从未被孔径裁掉（2026-09-02）
 
@@ -86,7 +116,7 @@
 - 排查全记录（含第一轮误判与回滚）见
   `docs/records/BUG_MESHGUNBODY_SCOPE_CLIP_RERENDER_20260902.md`；
   实机判据见 `docs/MESH_LOADER.md` §5.2 第 18 条。
-  **证据级别：静态闭环（时序穷举 + 逐 gate 对照）；CI 与实机未跑，不宣称已修。**
+  **维护者实机测试 PASS（2026-09-07）**（开镜高模枪身按孔径正确裁切）。
 
 ### 同步 Fabric 26.2 线 `arena/01a05e3e`（tip `dee2578d`，2026-09-02 对账，R5）
 
@@ -170,7 +200,7 @@ NeoForge `ModConfigSpec.save()` 落盘链路已接好并经 R2 实机，FCAP 断
 LR「幽灵使用」/耳鸣资源（姊妹 `81dfb50`/PR #24 的全部内容本线已逐件在位，无差异可搬）、
 姊妹 CI workflow `.yml`（按仓库所有者流程由人手动跟进）。版本号**未动**（仍 `1.1.8+neoforge.26.2.R2`）⇒ README 无需跟改。
 
-## 1.1.8+neoforge.26.2.R2 — 2026-09-01（待发布命令）
+## 1.1.8+neoforge.26.2.R2 — 2026-09-01
 
 ### 目标环境
 
@@ -573,6 +603,7 @@ LR「幽灵使用」/耳鸣资源（姊妹 `81dfb50`/PR #24 的全部内容本�
 - 内置 Mesh Loader：GPU 烘焙的帧率收益数字（至少一组「多人满屏高模枪」开/关对比）。
 - Scope PIP / 镜内裁手 / 镜内文字的实机矩阵（当前默认关或仅在姊妹侧 PASS）。
 
-R2 条目在收到项目发起人明确发布命令前**不视为已发布**；发布时把上方日期改为
-实际发布日期，并把 `## Unreleased` 里的增量并入下一版条目。
-未收到明确命令时：**不 merge、不打 tag、不创建 Release、不上传 jar。**
+R2 已随 26.2 线发布流程发布（2026-09-01）。R2 之后的增量（string 库热修、
+创造栏搜索、死处理器接线、mesh 裁剪时序、两笔同步）已并入上方的 R3 条目。
+发布纪律不变：**未收到项目发起人明确发布命令时，不 merge、不打 tag、不创建
+Release、不上传 jar。**

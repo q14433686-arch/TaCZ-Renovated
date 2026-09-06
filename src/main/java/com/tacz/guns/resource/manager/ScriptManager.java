@@ -15,6 +15,7 @@ import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.Bit32Lib;
 import org.luaj.vm2.lib.PackageLib;
+import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.TableLib;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
@@ -112,6 +113,12 @@ public class ScriptManager extends SimplePreparableReloadListener<List<Map.Entry
         globals.load(new PackageLib());
         globals.load(new Bit32Lib());
         globals.load(new TableLib());
+        // string 库：官方 TACZ 1.20.1 的 ScriptManager#secureStandardGlobals 在同一位置
+        // 加载 Figura fork（com.github.FiguraMC.luaj:luaj-jse:3.0.8-figura）的 JseStringLib；
+        // 本仓库内置上游 luaj-jse-3.0.1，没有 jse.JseStringLib，等价类是 org.luaj.vm2.lib.StringLib
+        //（上游 JsePlatform#standardGlobals 同位加载）。缺了它 Lua 里没有 string 表，
+        // 第三方枪包脚本一执行 string.format 等就 "attempt to index ? (a nil value)" 崩服。
+        globals.load(new StringLib());
         // No CoroutineLib
         globals.load(new JseMathLib());
         // No JseIoLib
