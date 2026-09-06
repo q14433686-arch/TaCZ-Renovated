@@ -127,12 +127,16 @@ import 增加 `org.luaj.vm2.lib.StringLib`。脚本可见效果与官方一致�
 
 ## 4. 验收清单（实测时逐项打勾）
 
+> **维护者实机测试 PASS（2026-09-07）**——Phoenix 枪包崩溃场景复测通过。
+
 1. 装载 Phoenix Gunpack（Ra1k_gunpack v2.0.x），创造/生存拿取其任一武器
    （VSS / AK-74 / Groza 等），原地站 30 秒不崩（原症状为即时 `Ticking player`）；
 2. 对该武器射击至过热锁定，散热恢复正常（验证 `tick_heat` 全流程）；
 3. 默认枪包回归：默认武器射击/换弹/过热/拉栓正常（本修复对默认包应为零影响）；
 4. 服务端日志无新增 `ScriptLoader`/`ScriptAPI` warn；
 5. 客户端状态机动画正常（同一 `ScriptManager`，客户端一并恢复 string 库）。
+
+（维护者 2026-09-07 实机测试 PASS。）
 
 ## 5. 后续建议（未实施，另立工单）
 

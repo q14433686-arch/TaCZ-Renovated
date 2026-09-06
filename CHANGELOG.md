@@ -25,7 +25,7 @@
   （grep 零命中）故 R1/R2 实测未暴露。安全边界不变（仍无
   Coroutine/Io/Os/Luajava）。证据与验收清单见
   [`docs/records/SCRIPT_STRINGLIB_RESTORE_20260907.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_20260907.md)。
-  **编译门走 CI；运行期未实机验证。**
+  编译门走 CI；**维护者实机测试 PASS（2026-09-07）**。
 - **创造模式搜索栏搜不到任何物品**（1.21.11 / 26.2 线复现，26.1.2 线正常）：
   `onSyncGunPack` 收到枪包同步后只调了静态
   `CreativeModeTabs.tryRebuildTabContents` 重建各标签页展示列表、**没有**重建
