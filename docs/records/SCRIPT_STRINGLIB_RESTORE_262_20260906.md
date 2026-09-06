@@ -118,6 +118,13 @@ import 增加 `org.luaj.vm2.lib.StringLib`。脚本可见效果与官方一致�
 
 ## 4. 验收清单（实测时逐项打勾）
 
+> **姊妹 1.21.11 线实机信号（2026-09-07，非本线用户测试）**：本修回传自姊妹线
+> commit `47960ae`，姊妹线维护者已实机复测 Phoenix 崩溃场景 **PASS**（见该线
+> `b7eb785`，2026-09-07）。本线与姊妹线共享**同一 vendor jar + 逐字节相同**
+> `ScriptManager`，string 库缺失属纯 Lua 标准库装载、与 MC 版本无关，故该 PASS
+> 对本线是强同源信号。但按仓库纪律（AGENTS §2：兄弟线 PASS 不自动继承到本线），
+> 以下清单仍需**本线用户**实测通过后才能将本线状态改为 PASS。
+
 1. 装载 Phoenix Gunpack（Ra1k_gunpack v2.0.x），创造/生存拿取其任一武器
    （VSS / AK-74 / Groza 等），原地站 30 秒不崩（原症状为即时 `Ticking player`）；
 2. 对该武器射击至过热锁定，散热恢复正常（验证 `tick_heat` 全流程）；
