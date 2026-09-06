@@ -3,11 +3,15 @@
 版本号格式：`1.1.8+neoforge.26.1.2.<标签>`。`+` 之后是 SemVer build metadata，
 因此枪包的 `tacz >= 1.1.8` 依赖检查照常通过（**禁止**改用 `-`，那是 pre-release，会静默不满足 `>=1.1.8`）。
 
-## 未发布（R2 之后，尚未 bump `mod_version`）
+## 1.1.8+neoforge.26.1.2.R3 — 2026-09-07
 
 > 包含与姊妹项目 [TaCZ_Refabricated_Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial)
 > `26.1.2` 分支提交 [`6a4c21c2`](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/commit/6a4c21c2)
-> 的语义同步，以及 NeoForge 其他版本线的适用修复。**游戏运行期未实机验证；各项构建与回归状态见对应记录。**
+> 的语义同步，以及 NeoForge 其他版本线的适用修复。
+> **维护者实机测试 PASS（2026-09-07，本轮会话确认）**，不是跨分支继承的结论。
+> 本线确认与 R3 构建验证见
+> [`docs/records/R3_CONFIRMATION_2612_20260907.md`](docs/records/R3_CONFIRMATION_2612_20260907.md)；
+> 未逐项留档的兼容环境与发布流水线运行状态另行说明。
 
 ### 修复
 
@@ -17,7 +21,8 @@
   `StringLib`，修复 `string.format` 等访问因缺库报 nil 错误的问题，并恢复字符串方法式调用。
   不引入 Figura fork、不改变本线 Java 25 / NeoForge 26.1.2 配置，也不额外加载 IO / OS 等库。
   本线最小脚本已验证修复前失败、修复后通过；新增独立 Lua 回归，47 个内置 Lua 脚本编译通过
-  （未执行游戏逻辑）。**本线 CI 已通过 compileJava 与完整 build；Phoenix 等枪包的游戏运行期未实机验证**。
+  （未执行游戏逻辑）。**本项随本线 R3 修复由维护者确认实机测试 PASS（2026-09-07）**；
+  不据此宣称所有第三方枪包及其版本均已验证。
   来源取舍、API 证据与验收边界见
   [`docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md)；
   后续本线 CI 补验见
@@ -54,27 +59,29 @@
   内置 LRTactical 的近战 / 投掷物 / 消耗品渲染器继承同一基类，一并获得该窗口（**行为扩大**）。
   机制、加固论证与实测清单见
   [`docs/SYNC_PUTAWAY_KEEP_26_1_2_20260902.md`](docs/SYNC_PUTAWAY_KEEP_26_1_2_20260902.md)；
-  **待实测**（含开镜中切枪、光影下不双影、与 Viewmodel Changer 一类模组共存）。
+  本项纳入本线 R3 修复的维护者实机 PASS 确认；开镜切枪、光影、与 Viewmodel Changer
+  等模组的专项共存矩阵未逐项新增记录，不据此扩大兼容性结论。
 
 - **创造模式搜索栏搜不到物品（防御性修复 / 时序隐患）**：`ClientPacketHandlers#onSyncGunPack`
   收到枪包同步后两次调用静态 `CreativeModeTabs.tryRebuildTabContents(...)` 重建标签页展示列表，
   但没有重建 `SessionSearchTrees`（1.21.x 起搜索栏查的是异步构建的 `FullTextSearchTree`），且把
   vanilla 静态 `CACHED_PARAMETERS` 钉成与屏幕后续相同的参数，导致原版屏幕因「参数未变」跳过搜索树
   重建、搜索栏整体失效。26.2 / 1.21.11 线已实机复现（同源修复：1.21.11 线 PR #41）；**26.1.2 线
-  当前可能未复现**（同步到达更早、if 块可能整体跳过），但代码缺陷完全一致，现镜像原版
+  最初移植时未单独确认复现**（同步到达更早、if 块可能整体跳过），但代码缺陷完全一致，现镜像原版
   `CreativeModeInventoryScreen#tryRebuildTabContents` 同款逻辑显式补调
   `updateCreativeTooltips` / `updateCreativeTags`。补丁为惰性（if 块不执行则无任何变化）。
   记录见 [`docs/records/CREATIVE_SEARCH_SYNC_FIX_2612_20260903.md`](docs/records/CREATIVE_SEARCH_SYNC_FIX_2612_20260903.md)。
-  **编译门走 CI，运行期未实机验证。**
+  **本项随本线 R3 修复由维护者确认实机测试 PASS（2026-09-07）**，不倒改最初复现记录。
 
 ### 开发与发布流程
 
-- **新版本发布工作流适配稿**：复查 1.21.11 的 `03eb457e` 后，移植其按 tag 构建并创建
+- **新版本发布工作流**：复查 1.21.11 的 `03eb457e` 后，移植其按 tag 构建并创建
   GitHub Release 的流程，按本线 Java 25、精确版本/tag 校验、JarJar/元数据/mixin/AT
   L0 门禁、commit + SHA-256 留痕重写；修正来源的无效 `gh release create --tag-name`
   参数，不选择“第一个 jar”，不覆盖已有 Release，默认创建草稿。
-  模板 [`docs/publish/ci/release.yml`](docs/publish/ci/release.yml) **待维护者复制上线**；
-  新增发布正文草稿与 17 项离线门禁回归，**没有 bump 本线 R3，也不继承来源的实机 PASS**。
+  正式件 [`.github/workflows/release.yml`](.github/workflows/release.yml) **已由维护者上线**，
+  与 [`docs/publish/ci/release.yml`](docs/publish/ci/release.yml) 同源；R3 发布正文已同步，
+  17 项离线门禁回归通过。工作流上线不等于发布上传或最终 tag 的 L0 检查已经运行。
   上线说明见 [`docs/publish/ci/README.md`](docs/publish/ci/README.md)，
   逐提交取舍与本线验证见
   [`docs/records/RELEASE_WORKFLOW_PORT_2612_20260907.md`](docs/records/RELEASE_WORKFLOW_PORT_2612_20260907.md)。

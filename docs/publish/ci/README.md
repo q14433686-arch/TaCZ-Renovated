@@ -3,28 +3,33 @@
 本目录存放 `.github/workflows/` 正式件的同源模板及待上线稿。
 **模板文件本身不会运行**；修改后必须同步正式件。按本仓库已有权限分工，普通代码/文档
 从工作分支合入，workflow 由具备工作流写权限的维护者在 GitHub 网页端创建或更新。
-不要把模板提交或编译 CI 通过写成“发布工作流已上线”。本次实际尝试写入
-`.github/workflows/release.yml` 被 GitHub 拒绝，原因是 GitHub App 缺少 `workflows` 权限；
-普通文件推送与构建 CI 已成功，因此需要维护者复制下列工作流，而不是提供账号凭据。
+维护者已于 **2026-09-07** 将 `release.yml` 添加到默认分支与本工作分支，已核对正式件
+与模板一致、GitHub Actions 注册为 active；**本轮不需要再次复制**。上轮 App 缺少
+`workflows` 权限的情况仍作为历史记录保留，今后若需改工作流仍由有权限的维护者更新。
+定义上线、CI 通过与实际发布上传分别记账，当前状态见
+[`R3 签收记录`](../../records/R3_CONFIRMATION_2612_20260907.md)。
 
 ## 模板清单
 
 | 模板 | 正式件 | 状态 | 用途 |
 |---|---|---|---|
 | [`consistency.yml`](consistency.yml) | `.github/workflows/consistency.yml` | 已上线 | 版本一致性与文档链接 |
-| [`release.yml`](release.yml) | `.github/workflows/release.yml` | **本次适配，待复制上线** | 新 tag 构建 → 发布门禁 → 创建 Release（默认草稿）→ commit/sha256 留痕 |
+| [`release.yml`](release.yml) | `.github/workflows/release.yml` | **已由维护者上线，与模板一致** | 新 tag 构建 → 发布门禁 → 创建 Release（默认草稿）→ commit/sha256 留痕 |
 | [`release-assets.yml`](release-assets.yml) | `.github/workflows/release-assets.yml` | 待上线的旧资产维护方案 | 对已存在的 Release 上传资产与留痕，不负责创建 Release |
 
 `build.yml` / `compile-check-2612.yml` 仍由维护者直接在网页端维护，本次不改。
 
-## 需要维护者复制粘贴的文件
+## 工作流部署与后续维护
 
-1. **先合入本次工作分支的普通代码/文档**，尤其是
+本轮正式件已经就位，勿重复创建。以下步骤供首次部署到其他环境或日后更新时参考；
+本轮仍须合入配套代码与 R3 文档后，才能为最终源码创建发布 tag。
+
+1. **发布 commit 必须包含配套代码/文档**，尤其是
    [`verify_release.py`](../../../scripts/verify_release.py)、
    [`test_release_gate.py`](../../../scripts/tests/test_release_gate.py)、
    [`test_script_globals.py`](../../../scripts/test_script_globals.py) 及其 Lua 断言文件、
    [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)。不要只复制 workflow 而漏掉它调用的脚本。
-2. GitHub 仓库页面选择默认分支 **`26.1.2`** → **Add file → Create new file**。
+2. GitHub 仓库页面选择默认分支 **`26.1.2`**；已有正式件时编辑它，首次部署才新建文件。
 3. 文件名填 **`.github/workflows/release.yml`**。
 4. 把 [`release.yml`](release.yml) **全文**复制进去并保存；不要粘 1.21.11 的原版，
    本版使用 Java 25，并修正了 CLI 参数、tag/版本检查与本线的资产留痕。
@@ -38,10 +43,10 @@ GitHub 的 `workflow_dispatch` 要求 workflow **先存在于默认分支**；�
 
 1. 按 [`RELEASE.md`](../RELEASE.md) §4 完成本线发布前核对，尤其是 **LAN 双人加入**。
 2. 确定新 `mod_version`，同步 README 三处与 CHANGELOG，`--strict` 通过。
-   不因 1.21.11 已发布 R3 就自动把 26.1.2 也写成 R3 / 实机 PASS。
+   本线当前已同步 R3，实机 PASS 按维护者本轮确认记账；今后也不能跨版本自动继承。
 3. 重写 [`RELEASE_NOTES.md`](../RELEASE_NOTES.md)：准确环境、本次变化、本构建验证边界、
-   来源与许可；把首行 `release-version: UNRELEASED` 改成最终完整版本号。
-   删掉过期草稿说明，但不得把“未实机”擅自改成 PASS。
+   来源与许可；首行 `release-version` 必须是最终完整版本号。R3 已完成这一步，
+   以后新版本定稿前的 `UNRELEASED` 仍会被拦截；不擅自填入未经确认的专项 PASS。
 4. 为**包含上述文件与版本改动的发布 commit** 创建并推送新 tag；此时不要先建 Release。
    tag 格式为 `26.1.2_` + build metadata 尾段，例如 `26.1.2_R3` 或 `26.1.2_R2.1`。
    旧的 R2 tag 与 R2 二进制不得拿来承载尚未发布的修复。
@@ -53,7 +58,7 @@ GitHub 的 `workflow_dispatch` 要求 workflow **先存在于默认分支**；�
 6. 核对输出 jar 名、正文准确性、资产世代记录中的完整 commit 与 sha256；
    发布后再回填 README 下载链接，其他平台仍需按各平台规则单独上传。
 
-等价 CLI（**示例，不表示 R3 已准备好**）：
+R3 发布 CLI（**先合入并创建对应 tag，再执行；本次合并不自动发布**）：
 
 ```bash
 gh workflow run release.yml --ref 26.1.2 \
@@ -65,7 +70,7 @@ gh workflow run release.yml --ref 26.1.2 \
 
 ### 常见阻断（不要靠绕过门禁解决）
 
-- **Draft / wrong release-version**：当前正文还是草稿或引用了另一版，先人工复核正文及版本。
+- **Draft / wrong release-version**：若正文还是草稿或引用另一版，先人工复核正文及版本。
 - **Tag/version mismatch**：tag、`gradle.properties` 或游戏版本线不一致；别用其他分支的 tag。
 - **Release already exists**：包括已有草稿；流程不覆盖它，也没有 `--clobber`。
   若失败仅留下尚未公开、从未交付的空草稿，可核对后删除该空草稿再重试；

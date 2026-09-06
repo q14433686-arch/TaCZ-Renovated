@@ -42,7 +42,8 @@ python3 -m unittest discover -s scripts/tests -p 'test_release_*.py' -v
 只需 Python 3.11+，用临时合成 ZIP 验证版本/tag/正文、mods.toml、mixin、AT 与 JarJar
 的拒绝路径，不需要下载游戏依赖。最终 jar 的 L0 检查用
 `python3 scripts/verify_release.py --tag <tag> --artifact`；部署与正文准备见
-[`publish/ci/README.md`](publish/ci/README.md)。当前未发布正文会被预检主动拦截，不应删除门禁。
+[`publish/ci/README.md`](publish/ci/README.md)。正文仍为 `UNRELEASED` 或版本头不匹配时会被
+预检主动拦截；R3 已同步为正式版本头，不需要也不应删除门禁。
 
 ## 版本号（红线）
 

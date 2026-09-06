@@ -87,7 +87,7 @@
    缺陷只在该路径触发，单机日志零痕迹（R2 复盘：
    [`../records/R2_RELEASE_RETRO_20260903.md`](../records/R2_RELEASE_RETRO_20260903.md)）。
 5. 检查 jar 内版本元数据、mixin、AT 与 jar-in-jar 依赖。
-6. 新版本首发使用适配后的 `release` workflow（**模板待维护者上线**，见 §4.1）；
+6. 新版本首发使用适配后的 `release` workflow（**已由维护者上线**，见 §4.1）；
    已有 Release 的资产维护保留 `release-assets` 模板。两者都不得绕过**禁止同名换弹**：
    热修先 bump build metadata（如 `R2 → R2.1`），新版本使用新 tag；
    世代记录（构建 commit + sha256）必须保留。操作与模板见 [`ci/README.md`](ci/README.md)。
@@ -101,15 +101,18 @@
 ### 4.1 按 tag 构建并创建 GitHub Release
 
 从 1.21.11 的发布自动化适配而来，但使用本线 **Java 25 / NeoForge 26.1.2**，
-保留上述版本、实机、禁止同名替换和来源署名规则，不复制另一条线的 R3 / PASS 状态。
+保留上述版本、实机、禁止同名替换和来源署名规则。当前本线 R3 与实机 PASS 来自
+维护者本轮确认，见 [`R3 签收记录`](../records/R3_CONFIRMATION_2612_20260907.md)，不是跨版本继承。
 
-- 工作流全文：[`ci/release.yml`](ci/release.yml)，维护者复制到
-  `.github/workflows/release.yml` 后生效；**当前模板不代表已上线**。
-- 版本正文：[`RELEASE_NOTES.md`](RELEASE_NOTES.md)。每次发布按本线 CHANGELOG 重写；
-  当前是未发布草稿，首行 `release-version: UNRELEASED` 会主动阻止发布。
-  确定新版本、同步活文档并复核正文后，改为最终完整 `mod_version`（保留 HTML 注释格式）。
-- tag 必须已存在且与版本对应，例如 `1.1.8+neoforge.26.1.2.R3` 对应 `26.1.2_R3`；
-  `...R2.1` 对应 `26.1.2_R2.1`。这些仅是格式示例，本次没有 bump 或创建任何 tag。
+- 正式工作流 `.github/workflows/release.yml` **已由维护者上线**；
+  [`ci/release.yml`](ci/release.yml) 是逐字节一致的同源模板，本次无需重复复制。
+  定义已上线不表示已经执行发布上传。
+- 版本正文：[`RELEASE_NOTES.md`](RELEASE_NOTES.md)，本线 **R3 正文与版本头已同步**
+  为 `1.1.8+neoforge.26.1.2.R3`。以后每次发布仍须按本线 CHANGELOG 复核；
+  未定稿时可保留 `release-version: UNRELEASED` 阻止误发布，不得删除版本头门禁。
+- tag 必须已存在且与版本对应：当前 **R3 → `26.1.2_R3`**；
+  例如热修 `...R3.1` 对应 `26.1.2_R3.1`。发布 tag 应指向合并后的最终发布 commit。
+  R3 源码/正文准备与 PR 合并不自动创建 tag 或 GitHub Release。
 - 流程：checkout **tag** → `--strict` 与版本/正文预检 → Lua 回归 → `gradlew build`
   → L0 检查（精确 jar 文件、mods.toml 版本/依赖、mixin 清单及内容、AT、JarJar 登记与
   内嵌库）→ 添加构建 commit / sha256 → 创建 GitHub Release，**默认草稿**。
