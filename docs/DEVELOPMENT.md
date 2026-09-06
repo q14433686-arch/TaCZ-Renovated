@@ -19,6 +19,31 @@
 低内存环境可在 `build.gradle` 保持 `disableRecompilation = true`；本机开发建议改回
 `false` 以挂上 Minecraft 反编译源码。
 
+### Lua 脚本环境回归
+
+有 Python 3 与 JDK 25 时，可不启动 Minecraft、不下载 Gradle 依赖执行：
+
+```bash
+python3 scripts/test_script_globals.py
+```
+
+脚本从 `ScriptManager` 提取实际 `secureStandardGlobals()` 与 LuaJ imports，用仓库
+内置 jar 编译并执行字符串 API、`require/preload`、未加载库和环境重建回归，同时编译
+内置 Lua 脚本（不执行其游戏逻辑）。工具默认取 `JAVA_HOME` 或 `PATH`，也可用
+`--java` / `--javac` 指定可执行文件。失败返回非零；**不能替代 `./gradlew build`
+或客户端/专用服务端实机验收**。
+
+### 发布门禁回归
+
+```bash
+python3 -m unittest discover -s scripts/tests -p 'test_release_*.py' -v
+```
+
+只需 Python 3.11+，用临时合成 ZIP 验证版本/tag/正文、mods.toml、mixin、AT 与 JarJar
+的拒绝路径，不需要下载游戏依赖。最终 jar 的 L0 检查用
+`python3 scripts/verify_release.py --tag <tag> --artifact`；部署与正文准备见
+[`publish/ci/README.md`](publish/ci/README.md)。当前未发布正文会被预检主动拦截，不应删除门禁。
+
 ## 版本号（红线）
 
 `mod_version` 必须是 `1.1.8+neoforge...`（SemVer **build metadata**）。

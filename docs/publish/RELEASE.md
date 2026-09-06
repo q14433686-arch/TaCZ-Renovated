@@ -87,15 +87,39 @@
    缺陷只在该路径触发，单机日志零痕迹（R2 复盘：
    [`../records/R2_RELEASE_RETRO_20260903.md`](../records/R2_RELEASE_RETRO_20260903.md)）。
 5. 检查 jar 内版本元数据、mixin、AT 与 jar-in-jar 依赖。
-6. 资产上传走 `release-assets` workflow（教程与热修 bump 规则见
-   [`ci/README.md`](ci/README.md)）：**禁止同名换弹**——替换资产必须先 bump
-   build metadata（如 `R2 → R2.1`）；世代记录（commit + sha256）由流程自动写入正文。
+6. 新版本首发使用适配后的 `release` workflow（**模板待维护者上线**，见 §4.1）；
+   已有 Release 的资产维护保留 `release-assets` 模板。两者都不得绕过**禁止同名换弹**：
+   热修先 bump build metadata（如 `R2 → R2.1`），新版本使用新 tag；
+   世代记录（构建 commit + sha256）必须保留。操作与模板见 [`ci/README.md`](ci/README.md)。
 7. 平台文件的 Minecraft / NeoForge / Java / Loader 标签与 jar 一致。
 8. 文件 Changelog 只包含该版本事实，不复制别的分支的 PASS。
 9. GitHub Release 正文按 §3 模板逐段填写（环境、本次变化、链接与署名），不得直接套用平台自动生成的 changelog。
 10. 项目页保留非官方声明、来源（原始项目 + 语义主线 + NeoForge 骨架参考（MUKSC））、许可、姊妹项目及反馈链接。
 11. CurseForge Rewards 与 Modrinth Monetization 保持关闭。
 12. 发布后验证 GitHub、CurseForge、Modrinth 和 MC 百科链接没有失效。
+
+### 4.1 按 tag 构建并创建 GitHub Release
+
+从 1.21.11 的发布自动化适配而来，但使用本线 **Java 25 / NeoForge 26.1.2**，
+保留上述版本、实机、禁止同名替换和来源署名规则，不复制另一条线的 R3 / PASS 状态。
+
+- 工作流全文：[`ci/release.yml`](ci/release.yml)，维护者复制到
+  `.github/workflows/release.yml` 后生效；**当前模板不代表已上线**。
+- 版本正文：[`RELEASE_NOTES.md`](RELEASE_NOTES.md)。每次发布按本线 CHANGELOG 重写；
+  当前是未发布草稿，首行 `release-version: UNRELEASED` 会主动阻止发布。
+  确定新版本、同步活文档并复核正文后，改为最终完整 `mod_version`（保留 HTML 注释格式）。
+- tag 必须已存在且与版本对应，例如 `1.1.8+neoforge.26.1.2.R3` 对应 `26.1.2_R3`；
+  `...R2.1` 对应 `26.1.2_R2.1`。这些仅是格式示例，本次没有 bump 或创建任何 tag。
+- 流程：checkout **tag** → `--strict` 与版本/正文预检 → Lua 回归 → `gradlew build`
+  → L0 检查（精确 jar 文件、mods.toml 版本/依赖、mixin 清单及内容、AT、JarJar 登记与
+  内嵌库）→ 添加构建 commit / sha256 → 创建 GitHub Release，**默认草稿**。
+- 不接受分支/SHA 代替 tag，不允许更新已存在的 Release（含草稿），发布前复查远端 tag
+  没有移动；不存在选择“第一个 jar”或 `--clobber` 的路径。
+- 在最终 tag 代码上可先本地核对：
+  `python3 scripts/verify_release.py --tag <tag> --artifact`（需 Python 3.11+、已构建 jar）。
+  自动化门禁不替代 §4 的 LAN / 实机检查，也不会上传到 CurseForge 或 Modrinth。
+
+上线步骤、`gh workflow run` 示例和失败处理见 [`ci/README.md`](ci/README.md)。
 
 ## 5. 项目级文案何时需要更新
 

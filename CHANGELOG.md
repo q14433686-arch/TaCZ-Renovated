@@ -5,11 +5,21 @@
 
 ## 未发布（R2 之后，尚未 bump `mod_version`）
 
-> 与姊妹项目 [TaCZ_Refabricated_Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial)
+> 包含与姊妹项目 [TaCZ_Refabricated_Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial)
 > `26.1.2` 分支提交 [`6a4c21c2`](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial/commit/6a4c21c2)
-> 的语义同步。**编译门走 CI，运行期未实机验证。**
+> 的语义同步，以及 NeoForge 其他版本线的适用修复。**游戏运行期未实机验证；各项构建与回归状态见对应记录。**
 
 ### 修复
+
+- **枪包 Lua 脚本缺少 `string` 标准库**：适配 NeoForge 1.21.11 线
+  [`47960aec`](https://github.com/q14433686-arch/TaCZ_Renovated/commit/47960aec11c83baa89a6c6d873c50825dbc00367)。
+  经核对，两线修复前 `ScriptManager` 与内置 LuaJ 3.0.1 jar 均相同；在共用脚本工厂补载
+  `StringLib`，修复 `string.format` 等访问因缺库报 nil 错误的问题，并恢复字符串方法式调用。
+  不引入 Figura fork、不改变本线 Java 25 / NeoForge 26.1.2 配置，也不额外加载 IO / OS 等库。
+  本线最小脚本已验证修复前失败、修复后通过；新增独立 Lua 回归，47 个内置 Lua 脚本编译通过
+  （未执行游戏逻辑）。**完整模组构建受沙箱网络阻挡；Phoenix 等枪包的游戏运行期未实机验证**。
+  来源取舍、API 证据与验收边界见
+  [`docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md)。
 
 - **七个事件处理器「静默失效」批量接线**（移植时只带了方法逻辑、漏了 NeoForge 总线注册，
   配置开了也毫无反应；证据与扫描记录见
@@ -54,6 +64,18 @@
   `updateCreativeTooltips` / `updateCreativeTags`。补丁为惰性（if 块不执行则无任何变化）。
   记录见 [`docs/records/CREATIVE_SEARCH_SYNC_FIX_2612_20260903.md`](docs/records/CREATIVE_SEARCH_SYNC_FIX_2612_20260903.md)。
   **编译门走 CI，运行期未实机验证。**
+
+### 开发与发布流程
+
+- **新版本发布工作流适配稿**：复查 1.21.11 的 `03eb457e` 后，移植其按 tag 构建并创建
+  GitHub Release 的流程，按本线 Java 25、精确版本/tag 校验、JarJar/元数据/mixin/AT
+  L0 门禁、commit + SHA-256 留痕重写；修正来源的无效 `gh release create --tag-name`
+  参数，不选择“第一个 jar”，不覆盖已有 Release，默认创建草稿。
+  模板 [`docs/publish/ci/release.yml`](docs/publish/ci/release.yml) **待维护者复制上线**；
+  新增发布正文草稿与 17 项离线门禁回归，**没有 bump 本线 R3，也不继承来源的实机 PASS**。
+  上线说明见 [`docs/publish/ci/README.md`](docs/publish/ci/README.md)，
+  逐提交取舍与本线验证见
+  [`docs/records/RELEASE_WORKFLOW_PORT_2612_20260907.md`](docs/records/RELEASE_WORKFLOW_PORT_2612_20260907.md)。
 
 ## 1.1.8+neoforge.26.1.2.R2 — 2026-09-02
 

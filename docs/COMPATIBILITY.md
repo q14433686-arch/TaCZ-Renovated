@@ -6,6 +6,11 @@
 
 - 兼容按 TaCZ **1.1.8** 制作的枪包，`tacz >= 1.1.8` 依赖检查照常通过。
 - 默认枪包随 jar 附带，首次启动解压到 `游戏目录/tacz/`。
+- **Lua `string` 标准库**：当前源码补回 `string.*` 与字符串方法式调用所需的库加载，
+  属于 **R2 之后未发布修复**，不应据此认为已发布 R2 jar 已包含修复。Java 25 下独立
+  Lua 回归通过；**Phoenix 等第三方枪包的游戏运行期未实机验证**。本线内置 LuaJ 3.0.1，
+  未验证与官方 Figura fork 的全部行为等价；来源、测试边界与复测清单见
+  [`records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md`](records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md)。
 - **依赖 `lrtactical` 的内容包**：R1 起完整可用（LRTactical 框架已内置，
   单机+专服实测 PASS；flash_shield 除外）。台账见
   [`records/LR2_INVENTORY.md`](records/LR2_INVENTORY.md)。
