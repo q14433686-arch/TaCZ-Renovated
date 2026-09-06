@@ -17,9 +17,11 @@
   `StringLib`，修复 `string.format` 等访问因缺库报 nil 错误的问题，并恢复字符串方法式调用。
   不引入 Figura fork、不改变本线 Java 25 / NeoForge 26.1.2 配置，也不额外加载 IO / OS 等库。
   本线最小脚本已验证修复前失败、修复后通过；新增独立 Lua 回归，47 个内置 Lua 脚本编译通过
-  （未执行游戏逻辑）。**完整模组构建受沙箱网络阻挡；Phoenix 等枪包的游戏运行期未实机验证**。
+  （未执行游戏逻辑）。**本线 CI 已通过 compileJava 与完整 build；Phoenix 等枪包的游戏运行期未实机验证**。
   来源取舍、API 证据与验收边界见
-  [`docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md)。
+  [`docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_2612_20260906.md)；
+  后续本线 CI 补验见
+  [`docs/records/RELEASE_WORKFLOW_PORT_2612_20260907.md`](docs/records/RELEASE_WORKFLOW_PORT_2612_20260907.md)。
 
 - **七个事件处理器「静默失效」批量接线**（移植时只带了方法逻辑、漏了 NeoForge 总线注册，
   配置开了也毫无反应；证据与扫描记录见

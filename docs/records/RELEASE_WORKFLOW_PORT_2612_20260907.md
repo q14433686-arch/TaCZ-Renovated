@@ -106,15 +106,32 @@
 - 当前源码 `python3 scripts/verify_release.py --tag 26.1.2_R2` **按预期退出 1**，
   原因是正文仍为 UNRELEASED。这是防误发布，不是应当绕开的失败。
 - actionlint 安装尝试受二进制下载 TLS 失败阻挡，**未执行 actionlint**，不冒充通过。
-- **本工作分支编译/构建 CI：待本次推送后的实际结果补记**，来源分支的成功不算本线证据。
+- **本线 CI 已通过**，代码提交为
+  [`27beda5f`](https://github.com/q14433686-arch/TaCZ_Renovated/commit/27beda5fc7559b5fb7597c0a3d1e6b8f5bc3caa9)：
+  [完整 build（含 jar 产物上传）](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34065485036)、
+  [compile-check](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34065485041)、
+  [consistency](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34065485039)
+  均为 success；不是借用 1.21.11 的 CI。随后仅补充本轮验证/权限记录，没有修改生产代码。
+- CI artifact `9998808775` 对应该代码提交，API 确认已上传；尝试下载供本地真实 jar L0
+  复核时，GitHub Actions 的 blob 存储下载发生 EOF。因此 **L0 校验器目前只有合成 ZIP
+  回归，没有对该真实产物执行**，不能把完整 build 成功等同于该新门禁的运行成功。
 - **尚未上线/运行新的 release workflow，没有真正的发布上传与最终 tag L0 验收**。
-  本线游戏实机、Phoenix、LAN 双人和专服复测仍未执行。
+  本线游戏实机、Phoenix、LAN 双人和专服复测仍未执行。上轮“沙箱不能完整构建”的记录
+  保留为当时快照；本轮通过本工作分支 CI 补验，不倒改历史。
 
 ## 6. 权限与交接
 
-普通工作分支的 `git push --dry-run` 已通过，不据 GitHub 公共仓库 `permissions` 字段的
-全 false 就误报整个连接失效。但本仓现有 workflow 分工仍要求维护者网页上线：
-提供模板而不把 `.github/workflows` 修改混进普通代码推送，也不索取任何凭据。
+普通工作分支的实际 push 已成功。另用独立、仅包含 `.github/workflows/release.yml`
+的提交尝试安装正式件，GitHub 明确拒绝：
+
+```text
+refusing to allow a GitHub App to create or update workflow
+`.github/workflows/release.yml` without `workflows` permission
+```
+
+只撤回了这笔**未推送成功**的工作流安装尝试，保留普通源码/文档与 CI 日志提交；
+远端没有安装该 workflow，也没有发生强推或其他分支/tag 变更。这是工作流写权限缺失，
+不是整个 GitHub 连接失效；不要求维护者提供任何凭据。
 
 维护者需要做的操作只有一个 workflow 文件的复制上线：普通改动合入后，将
 [`docs/publish/ci/release.yml`](../publish/ci/release.yml) **全文**复制为默认分支的
