@@ -80,7 +80,23 @@ minecraftLibrary(jarJar('com.github.FiguraMC.luaj:luaj-jse:3.0.8-figura')) { ...
 **推断（不移除）**：移植者照抄官方代码时 `new JseStringLib()` 在本线 jar 里
 编译不过，于是连库带行一起删了；环境静默劣化，R1/R2 均未暴露。
 
-### 2.3 为什么自带默认枪包没暴露
+### 2.4 姊妹线对照（2026-09-07 补充）：不是静默修复，是从来没坏
+
+姊妹项目三条线（`26.2(main)` / `26.1.2` / `1.21.11`）的 `ScriptManager`
+**均有** `globals.load(new JseStringLib())`——因为姊妹的 build.gradle 用
+Fabric `include` 直接内嵌**官方同款** `com.github.FiguraMC.luaj:luaj-jse:3.0.8-figura`，
+官方类就在 classpath 里，照抄官方代码天然编译通过。姊妹不存在「坏过再修」
+的提交痕迹。
+
+本线分叉点在**依赖件**：NeoForge jarJar 不能照搬 Fabric `include`，
+`build.gradle`（第 141–180 行）注释载明——`implementation files()` 不进发布
+jar（真实启动器 `NoClassDefFoundError: org/luaj/vm2/LuaError`），ModDevGradle 2
+拒绝 jarJar 无 JPMS 模块名的本地文件，于是走「vendor 本地 jar + 盖
+`Automatic-Module-Name`」的离线方案，vendor 的上游 `luaj-jse-3.0.1` 无
+`jse.JseStringLib` → 该行未落地。`git log -S JseStringLib --all` 仅命中本修复
+提交：本线历史从未有过 string 库加载，非中途删除。
+
+### 2.5 为什么自带默认枪包没暴露
 
 `grep -rn "string\." src/main/resources --include=*.lua`（含服务端 gun_logic 与
 客户端状态机全部自带脚本）零命中——默认枪包脚本不用 `string` 库，所以
@@ -124,3 +140,9 @@ import 增加 `org.luaj.vm2.lib.StringLib`。脚本可见效果与官方一致�
 路径）目前对 `LuaError` 无捕获，任何第三方包的脚本缺陷仍会崩整个游戏/服务端。
 可评估：捕获 `LuaError` → 按「脚本+函数」限频 warn（带包名与函数名）→ 回退
 内置默认行为（如 `defaultTickHeat`）。属行为面变更，需按宪章另走评审。
+
+可选对齐项：将 vendor 依赖从上游 luaj 3.0.1 换成官方/姊妹同款 Figura fork
+`com.github.FiguraMC.luaj:luaj-jse:3.0.8-figura`（官方 TACZ 本身即 maven jarJar
+该构件，需接 FiguraMC maven 仓库；MDG 远程 jarJar 可行性另验）。可一并消除
+3.0.1 → 3.0.8 的版本差与 fork 差异；属依赖面变更，风险与收益另行评估，
+不并入本热修。
