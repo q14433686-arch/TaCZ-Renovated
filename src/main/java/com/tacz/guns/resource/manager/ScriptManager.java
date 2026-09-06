@@ -15,6 +15,7 @@ import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.Bit32Lib;
 import org.luaj.vm2.lib.PackageLib;
+import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.TableLib;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
@@ -112,6 +113,9 @@ public class ScriptManager extends SimplePreparableReloadListener<List<Map.Entry
         globals.load(new PackageLib());
         globals.load(new Bit32Lib());
         globals.load(new TableLib());
+        // 官方/姊妹 Figura fork 使用 JseStringLib；本线内置 LuaJ 3.0.1 对应 StringLib。
+        // string.* 与 ("..."):method() 都依赖它，不能因类名不同而省略加载。
+        globals.load(new StringLib());
         // No CoroutineLib
         globals.load(new JseMathLib());
         // No JseIoLib
