@@ -71,6 +71,13 @@ TaCZ 枪械 mod 面向较新的 Minecraft 版本的 NeoForge 移植首个发布�
 
 ## §2 发布操作清单（发起人执行）
 
+> **R3 起第 2/4 步已自动化**：push tag 后
+> `gh workflow run release -f tag=<tag> -f title=<标题>`，workflow 会
+> checkout 该 tag → `gradlew build` → L0 静态自检（jarjar 内嵌库、
+> mods.toml 版本串、mixin json 磁盘清单一一对应、`--strict`）→
+> 创建 Release 并挂 jar。正文取 `docs/publish/RELEASE_NOTES.md`
+> （**每次发版重写**）。本地/沙箱无法下载 CI 产物时，这是标准路径。
+
 1. 合并 PR #6（`arena/01a023bf-...` → 默认分支）；
 2. 本地最终构建：`./gradlew build`，L0 静态自检
    （jar 内 `META-INF/jarjar/` 含 luaj + commons-math3、四个 mixin json、AT、
