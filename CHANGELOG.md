@@ -3,16 +3,29 @@
 版本号格式：`1.1.8+neoforge.<mc>.<标签>`。`+` 之后是 SemVer build metadata，
 因此枪包的 `tacz >= 1.1.8` 依赖检查照常通过（**禁止**改用 `-`，那是 pre-release，会静默不满足 `>=1.1.8`）。
 
-## 未发布（R2 之后，尚未 bump `mod_version`）
+## 1.1.8+neoforge.1.21.11.R3（2026-09-07）
 
 > 回传 26.1.2 线「静默失效事件处理器」修复轮（26.1.2 线 commit `e5828f0` +
 > 交接工单 `HANDOFF_DEAD_HANDLERS_TO_262_12111_20260903.md`），本线先跑注册面
 > 扫描确认 8 项缺陷后逐项属地化接线；API 证据与扫描记录见
 > [`docs/records/WIRE_DEAD_HANDLERS_12111_20260902.md`](docs/records/WIRE_DEAD_HANDLERS_12111_20260902.md)。
-> **编译门走 CI；运行期未实机验证。**
+> **编译门走 CI；维护者实机测试 PASS（2026-09-07）。**
 
 ### 修复
 
+- **第三方枪包脚本一用 `string.*` 就崩服**（用户报告：Phoenix Gunpack
+  `ra1k_gun_logic:216 attempt to index ? (a nil value)`，持枪即 `Ticking player`
+  崩溃循环；官方 TaCZ 1.1.8 上同一枪包正常）：移植 `ScriptManager` 时把
+  Lua `string` 库的加载行丢了——官方在同位加载 Figura fork luaj 的
+  `JseStringLib`，本线内置上游 luaj-jse-3.0.1 没有该类（疑似当初因此编译不过
+  连行带库一起删），导致脚本环境里根本没有 `string` 表。修复：在
+  `secureStandardGlobals` 官方同位补 `globals.load(new StringLib())`
+  （上游 3.0.1 的等价类，上游 `JsePlatform#standardGlobals` 同位同惯用法），
+  `string` 表与字符串元表一并恢复；自带默认枪包脚本不用 `string.*`
+  （grep 零命中）故 R1/R2 实测未暴露。安全边界不变（仍无
+  Coroutine/Io/Os/Luajava）。证据与验收清单见
+  [`docs/records/SCRIPT_STRINGLIB_RESTORE_20260907.md`](docs/records/SCRIPT_STRINGLIB_RESTORE_20260907.md)。
+  编译门走 CI；**维护者实机测试 PASS（2026-09-07）**。
 - **创造模式搜索栏搜不到任何物品**（1.21.11 / 26.2 线复现，26.1.2 线正常）：
   `onSyncGunPack` 收到枪包同步后只调了静态
   `CreativeModeTabs.tryRebuildTabContents` 重建各标签页展示列表、**没有**重建
@@ -22,7 +35,7 @@
   无结果。修复：在标签重建后显式补 `searchTrees#updateCreativeTooltips` +
   `updateCreativeTags`（镜像原版屏幕内同款代码）。证据与验收清单见
   [`docs/records/CREATIVE_SEARCH_SYNC_FIX_20260903.md`](docs/records/CREATIVE_SEARCH_SYNC_FIX_20260903.md)。
-  **编译门走 CI；运行期未实机验证。**
+  编译门走 CI；**维护者实机测试 PASS（2026-09-07）**。
 - **七个事件处理器「静默失效」批量接线**（移植时只带了方法逻辑、漏了 NeoForge
   总线注册，配置开了也毫无反应；与 26.1.2 线同构的 8 项缺陷）：
   - **跨维度服务端枪械状态机不刷新**（跨维度后客户端演完整套换弹动画、服务端
