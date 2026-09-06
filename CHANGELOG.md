@@ -7,6 +7,31 @@
 
 （R2 定名之后的增量写在里；发布时并入下一版条目。）
 
+### 修复：第三方枪包脚本一用 `string.*` 就崩服 —— Lua `string` 库缺失（2026-09-06）
+
+- **症状**（第三方枪包，如 [TACZ] Phoenix Gunpack，用户报告）：`Ticking player` →
+  `org.luaj.vm2.LuaError: ra1k_gun_logic:216 attempt to index ? (a nil value)`，持枪即
+  崩、再进世界秒崩循环；同一枪包在官方 TaCZ 1.1.8 上正常。自带默认枪包脚本
+  （tacz_default 与 lrtactical 全部）经 `grep "string\."` 核对**零命中**，故
+  R1/R2 枪包实测从未暴露。
+- **根因**：移植 `ScriptManager` 时丢了官方同位的 Lua `string` 库加载行 —— 官方在该位
+  加载 Figura fork luaj（`3.0.8-figura`）的 `JseStringLib`；本线（与 1.21.11 姊妹线同）
+  因 NeoForge jarJar 不能照搬 Fabric `include`，改 vendor 本地上游
+  `libs/luaj-jse-3.0.1.jar`，上游 3.0.1 **没有** `jse.JseStringLib`（`unzip -l` 核对），
+  照抄官方那行编译不过、连行带库一起删 ⇒ Lua 全局根本没 `string` 表，脚本一访问
+  `string.xxx` / `("…"):format()` 即崩（报错签名即「索引型访问 nil」，非「调用 nil」）。
+- **修法**：`ScriptManager#secureStandardGlobals` 在官方同位补
+  `globals.load(new StringLib())`（上游 3.0.1 的等价类，上游
+  `JsePlatform#standardGlobals` 同位同惯用法；`libs/luaj-jse-3.0.1.jar` 已含
+  `org/luaj/vm2/lib/StringLib` 及 `format/sub/find/gmatch/gsub` 等内部类）；import 增
+  `org.luaj.vm2.lib.StringLib`。`string` 表与字符串元表一并恢复。安全边界不变
+  （仍无 Coroutine/Io/Os/Luajava）。本修自 1.21.11 姊妹线回传（其 commit `47960ae`，
+  分支 `arena/01a07887`），本线与该姊妹线共用的 vendor jar / `ScriptManager`
+  逐字节同源，改动逐字等价。
+- 证据、姊妹三线对照与运行期验收清单见
+  `docs/records/SCRIPT_STRINGLIB_RESTORE_262_20260906.md`。
+  **本线证据级别：静态核对（jar 清单 + 源码等价）；编译门走 CI；运行期未实机验证，不宣称已修。**
+
 ### 修复：创造模式搜索栏搜不到任何物品（含 tacz / lrtactical 全部条目）（2026-09-03）
 
 - **症状**：创造栏各页物品齐全、无异常无日志，但搜索页任何关键词（连原版物品在内）
