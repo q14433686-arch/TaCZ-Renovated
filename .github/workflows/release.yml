@@ -1,8 +1,15 @@
 # 发布 workflow（26.2 线，R3 起自动化 RELEASE.md §2 第 3/4 步）：
-#   checkout 指定 tag → gradle build → L0 静态自检（发布门）→ GitHub Release 挂 jar。
+#   校验 tag 名 → checkout 指定 tag → gradle build → L0 静态自检（发布门）→ GitHub Release 挂 jar。
 # jar 只在 GitHub 侧构建与上传，本地/沙箱无需下载 CI 产物。
 # 用法：先 push tag，再 `gh workflow run release -f tag=<tag> -f title=<标题>`。
 # 正文取 docs/publish/RELEASE_NOTES.md（每次发版更新）。
+#
+# 2026-09-07 R3 修复稿（与 26.1.2 线同规格；保留本线 Java 25 与 L0 检查）：
+#   1. gh release create 没有 --tag-name 选项（TAG 是位置参数），旧写法必挂在最后一步；
+#   2. checkout 的 ref 加 refs/tags/ 前缀，避免把分支名当 tag 拉取导致 fetch 失败；
+#   3. 只接受本线 tag，禁止误传分支名 / SHA / 其他 Minecraft 版本；
+#   4. 禁止覆写已有 Release（含草稿）；
+#   5. 构建后复核 tag 未移动，Release 正文追加 commit + SHA-256 世代记录。
 
 name: release
 
@@ -13,24 +20,62 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '已存在的 tag（例如 26.2_R3）'
+        description: '已存在的本线 tag，须匹配 mod_version（例如 26.2_R3）'
         required: true
+        type: string
       title:
-        description: 'Release 标题'
+        description: 'Release 标题（可留空）'
         required: false
+        type: string
+      draft:
+        description: '先创建草稿；取消勾选才直接公开发布（需完成本线实机验收）'
+        required: false
+        default: true
+        type: boolean
 
 concurrency:
-  group: release-${{ github.event.inputs.tag }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ inputs.tag }}
     steps:
+      - name: Only accept 26.2 release tags
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^26\.2_R[0-9]+([.-][A-Za-z0-9]+)*$ ]] || {
+            echo '::error::Expected a 26.2_R... tag, not a branch/SHA/other Minecraft version'
+            exit 1
+          }
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Release preflight
+        run: |
+          set -euo pipefail
+          bash scripts/check_release_consistency.sh --strict
+
+      - name: Refuse to overwrite an existing release (including drafts)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # An API failure must abort, not be mistaken for "release does not exist".
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name' > "$RUNNER_TEMP/release-tags.txt"
+          if grep -Fxq "$TAG" "$RUNNER_TEMP/release-tags.txt"; then
+            echo '::error::Release already exists; use a new build-metadata version and tag for a hotfix'
+            exit 1
+          fi
 
       - uses: actions/setup-java@v4
         with:
@@ -69,12 +114,22 @@ jobs:
 
       - name: create GitHub release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event.inputs.tag }}
-          TITLE: ${{ github.event.inputs.title }}
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ inputs.title }}
+          DRAFT: ${{ inputs.draft }}
         run: |
+          set -euo pipefail
+          COMMIT=$(git rev-parse HEAD)
+          REMOTE_COMMIT=$(gh api "repos/$GITHUB_REPOSITORY/commits/refs/tags/$TAG" --jq .sha)
+          [[ "$COMMIT" == "$REMOTE_COMMIT" ]] || { echo '::error::Tag moved during the build'; exit 1; }
           JAR=$(ls build/libs/*.jar | grep -v '\-sources' | head -1)
-          ARGS=(--verify-tag --tag-name "$TAG" "$JAR")
-          [ -n "$TITLE" ] && ARGS+=(--title "$TITLE")
-          [ -f docs/publish/RELEASE_NOTES.md ] && ARGS+=(--notes-file docs/publish/RELEASE_NOTES.md)
+          SHA256=$(sha256sum "$JAR" | cut -d' ' -f1)
+          BODY="$RUNNER_TEMP/release-notes.md"
+          cp docs/publish/RELEASE_NOTES.md "$BODY"
+          printf '\n## 资产世代记录\n\n| UTC 时间 | 构建 commit | 文件 | sha256 |\n|---|---|---|---|\n' >> "$BODY"
+          printf '| %s | %s | `%s` | `%s` |\n' "$(date -u +%FT%TZ)" "$COMMIT" "$(basename "$JAR")" "$SHA256" >> "$BODY"
+          # TAG 是位置参数；gh release create 没有 --tag-name 选项。
+          ARGS=("$TAG" "$JAR" --repo "$GITHUB_REPOSITORY" --verify-tag --notes-file "$BODY"
+                --title "${TITLE:-TaCZ: Renovated — $TAG}")
+          if [ "$DRAFT" = 'true' ]; then ARGS+=(--draft); fi
           gh release create "${ARGS[@]}"
