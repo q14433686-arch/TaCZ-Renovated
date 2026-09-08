@@ -280,3 +280,29 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// Dependency-free regression for the mesh/Iris render-pass boundary (sister refab 26.1.2 9412e08).
+// Compiles the actual partition policy with a standalone harness; no client, OpenGL context or
+// extra test library is required. Runs under `check` (and therefore CI `./gradlew build`).
+def meshPassTestClasses = layout.buildDirectory.dir("classes/meshRenderPassTest")
+tasks.register("compileMeshRenderPassTest", JavaCompile) {
+    source files(
+            "src/main/java/com/tacz/guns/compat/meshloader/render/MeshRenderPassBatches.java",
+            "tests/mesh-render-pass/MeshRenderPassBatchesTest.java")
+    classpath = files()
+    destinationDirectory = meshPassTestClasses
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+tasks.register("meshRenderPassTest", JavaExec) {
+    dependsOn "compileMeshRenderPassTest"
+    classpath = files(meshPassTestClasses)
+    mainClass = "com.tacz.guns.compat.meshloader.render.MeshRenderPassBatchesTest"
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+tasks.named("check") {
+    dependsOn "meshRenderPassTest"
+}
