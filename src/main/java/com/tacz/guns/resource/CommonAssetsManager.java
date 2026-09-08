@@ -8,6 +8,7 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.api.vmlib.LuaGunLogicConstant;
 import com.tacz.guns.api.vmlib.LuaLibrary;
 import com.tacz.guns.crafting.GunSmithTableIngredient;
+import com.tacz.guns.crafting.result.GunSmithTableResult;
 import com.tacz.guns.network.NetworkHandler;
 import com.tacz.guns.network.message.ServerMessageSyncGunPack;
 import com.tacz.guns.resource.filter.RecipeFilter;
