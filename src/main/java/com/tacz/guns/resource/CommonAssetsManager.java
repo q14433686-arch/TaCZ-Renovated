@@ -9,6 +9,7 @@ import com.tacz.guns.api.vmlib.LuaGunLogicConstant;
 import com.tacz.guns.api.vmlib.LuaLibrary;
 import com.tacz.guns.crafting.GunSmithTableIngredient;
 import com.tacz.guns.crafting.result.GunSmithTableResult;
+import com.tacz.guns.init.ModRecipe;
 import com.tacz.guns.network.NetworkHandler;
 import com.tacz.guns.network.message.ServerMessageSyncGunPack;
 import com.tacz.guns.resource.filter.RecipeFilter;
@@ -343,8 +344,19 @@ public class CommonAssetsManager implements ICommonResourceProvider {
         if (getInstance() == null) {
             return;
         }
+
+        // PlayerList posts OnDatapackSyncEvent before it sends either the vanilla recipe update
+        // or NeoForge's RecipeContentPayload. Send our authoritative cache now, then explicitly
+        // request the full content of our own recipe type. That non-empty payload produces the
+        // public client-side RecipesReceivedEvent after this cache has been installed and marks
+        // JEI's native recipe state as synchronized, so JEI can start/restart its plugins there.
+        // A TACZ cache payload alone cannot provide that lifecycle barrier.
+        //
+        // REI already reacts to the vanilla recipe-update packet which follows this event. Do not
+        // race that reload with REI's internal reloadPlugins hook from the gun-pack packet handler.
         ServerMessageSyncGunPack message = new ServerMessageSyncGunPack(getInstance().getNetworkCache());
         event.getRelevantPlayers().forEach(player -> NetworkHandler.sendToClientPlayer(message, player));
+        event.sendRecipes(ModRecipe.GUN_SMITH_TABLE_CRAFTING.get());
     }
 
     public static void reloadAllPack() {

@@ -1,6 +1,5 @@
 package com.tacz.guns.client.event;
 
-import com.tacz.guns.client.compat.RecipeViewerReloadBridge;
 import com.tacz.guns.client.gameplay.LocalPlayerDataHolder;
 import com.tacz.guns.client.resource.ClientIndexManager;
 import com.tacz.guns.resource.CommonAssetsManager;
@@ -13,8 +12,6 @@ public final class CommonNetworkCacheEvent {
     }
 
     public static void onClientPlayerLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        RecipeViewerReloadBridge.clear();
-
         // An integrated server shares the static CommonAssetsManager instance with the
         // client, so do not clear that server-owned instance while it is still shutting
         // down. The client network cache must nevertheless be cleared on memory

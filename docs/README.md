@@ -60,6 +60,8 @@
   —— PIP 同步取舍与帧率衰减调查；
 - `SCOPE_MASK_HULL_SLOPESPACE_20260827.md`、`SCOPE_IRIS_VIEWLAG_AUDIT_20260826.md`、
   `SCOPE_RING_IRIS_OVERLAY_20260830.md` —— 目镜掩码与光影的三份取证；
+- `RECIPE_VIEWER_SYNC_262_20260908.md` —— JEI / REI 默认弹药工作台配方与 Ammo Query
+  的 native recipe-sync 时序、REI null-entry 根因、修复与待验收矩阵；
 - `SERVER_TEST_*.md`、`BRANDING.md`、`RELEASE_CHECKLIST_26_2_R1.md` —— 实测回执、
   品牌决策与 R1 归档清单。
 

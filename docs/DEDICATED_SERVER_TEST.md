@@ -157,6 +157,9 @@ R1 证据：`docs/records/SERVER_TEST_20260821_GUNPACK.md`。
 | 13 | A 连续使用分类冷却道具 | `ServerMessageCustomCooldown` 只发所属玩家；B 不串冷却 | |
 | 14 | A 用 LR 近战攻击 B | C2S prepare、服务端索敌/冷却/伤害权威、双方动画/HUD | |
 | 15 | 在线 `/tacz reload` 后重跑 #12-#14 | LR 三类 index S2C 重同步、旧状态不泄漏 | |
+| 16 | **JEI only**：A/B 分别查默认 `tacz:9mm` 等弹药 | `OnDatapackSyncEvent#sendRecipes(tacz type)` → `RecipeContentPayload` → `RecipesReceivedEvent` → JEI restart；24 条默认 ammo 工作台配方、材料 tag 与 TaCZ Ammo Query 的相容枪械均可见。服务端不装 JEI 也必须测。 | |
+| 17 | **REI only**：A/B 分别查同一批弹药，再在线 `/tacz reload` | cache payload → 原生 `ClientboundUpdateRecipesPacket` → Architectury `ClientRecipeUpdateEvent` → REI START/END；24 条默认 ammo 配方与 Ammo Query 均可见，日志无 `GunSmithTableDisplay` null / existing reload task。服务端不装 REI 也必须测。 | |
+| 18 | **JEI + REI**：重跑 #16/#17 | 两个 viewer 同时在场时独立登记；任一 viewer 不得打断另一个的工作台配方或 Ammo Query。 | |
 
 ## L4. 服务器形态矩阵（L2/L3 通过后按优先级推进）
 

@@ -30,8 +30,8 @@
 | Player Animation Library (PAL) | `1.2.6+26.2` merged Fabric+NeoForge，Curse file `8674798` | 第三人称枪械动画 | 源码 API 已核；未实机 |
 | Controllable | `0.26.1` NeoForge 26.2，Curse file `8403602` | 手柄绑定、连射轮询、开火震动 | 源码 API 已核；未实机；运行时另需其 Framework 依赖 |
 | Shoulder Surfing Reloaded | `5.0.7` NeoForge 26.2，Curse file `8445037` | v5 plugin event、双手枪械 adaptive aim、准星 | plugin/API/发现机制已核；未实机 |
-| JEI | `30.24.0.176`，`mezz.jei:jei-26.2-neoforge:30.24.0.176` | 工作台、配件/弹药查询、subtype | 30.24 source/API 已核；未实机 |
-| REI | `26.2.820` NeoForge，Curse file `8271756` | 工作台、配件/弹药查询、subtype、同步后 reload | source/API 已核；未实机 |
+| JEI | `30.24.0.176`，`mezz.jei:jei-26.2-neoforge:30.24.0.176` | 工作台、配件/弹药查询、subtype、native recipe-sync lifecycle | 30.24 source/API 已核；未实机 |
+| REI | `26.2.820` NeoForge，Curse file `8271756` | 工作台、配件/弹药查询、subtype、native recipe-update lifecycle | source/API 已核；未实机 |
 | Architectury API | `21.0.2` NeoForge | REI 26.2.820 的编译/运行依赖 | 按 REI 26.2 source 原始 pin |
 | Iris | `1.11.2` NeoForge 26.2 | 反射 API、HAND/HAND_TRANSLUCENT、shadow、linked-fragment mask bridge | OpenGL source/API 已核；实机反馈 2026-09-02（用户，Iris 1.11.2 + ComplementaryUnbound r5.8.1）：PIP 二次渲染与目镜掩码孔径裁切行为确认（两项均非逐条矩阵 PASS） |
 | Carry On | `2.11.0` NeoForge 26.2 | 多格工作台 root/companion、放置预检、携带模型 BlockId | 2.11.0 descriptor 已核；未实机 |
@@ -60,8 +60,9 @@
   `RecipesReceivedEvent` 启动/刷新。
 - **REI 26.2.820**：branch commit
   `2be20928abd9f1164fd9fd251268041c036b580f`。本仓 REI import 均存在；额外
-  `me.shedaniel.math` 类型由 Cloth/REI 依赖提供；`reloadPlugins(MutableLong,ReloadStage)`
-  两参入口存在。该 source 明确 pin Cloth `26.2.155`、Architectury `21.0.2`。
+  `me.shedaniel.math` 类型由 Cloth/REI 依赖提供。REI 的 native recipe-update
+  START/END 生命周期已核；不再调用内部的 `reloadPlugins(MutableLong,ReloadStage)`，避免
+  与其异步任务竞争。该 source 明确 pin Cloth `26.2.155`、Architectury `21.0.2`。
 - **Iris 26.2**：branch commit
   `8f3a7a35d780fe80c8cd3c8517f3fa3c4df3f18a`。已核 API revision 3、
   `assignPipeline`、`isRenderingShadowPass`、HandRenderer 三个查询，以及
@@ -124,7 +125,7 @@
 3. PAL only：第三人称持枪、切枪、趴姿→站立、淡出重复。
 4. Controllable + Framework：绑定、按住连射、换弹/近战/瞄准、各 fire mode 震动。
 5. Shoulder Surfing 5.0.7：双手枪判定、adaptive aim、free-look、准星。
-6. JEI only / REI only / JEI+REI：默认包、第三方包、远程同步后刷新、工作台 catalyst。
+6. JEI only / REI only / JEI+REI：默认包的 24 条 ammo 工作台配方、TaCZ Ammo Query、第三方包、远程同步后刷新、工作台 catalyst；专服端不安装 viewer 的场景也要分别验证。
 7. Iris 1.11.2：无光影/有光影、HAND solid/translucent、shadow、mask mode 泄漏、水/粒子/云。
 8. Carry On 2.11.0：A/B/C 工作台任一半格搬起、完整放下、阻挡时原子失败、BlockId 模型。
 9. Vulkan：阶段边界 target 切换、mask debug 预览、无 device loss、镜身/准星/火光裁剪。
