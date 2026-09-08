@@ -33,7 +33,6 @@ public class GunModClient {
             com.tacz.guns.client.init.ClientSetupEvent.registerItemRenderers();
             // Deferred LR items are available here; registering earlier silently skips renderers.
             me.xjqsh.lrtactical.client.init.ModEntitiesRender.registerItemRenderers();
-            com.tacz.guns.compat.shader.ShaderCompat.assignCommonEntityPipelinesToHandIfNeeded();
             GunMod.LOGGER.info("TaCZ client setup (work package ⑥ ShaderCompat). minecraft={}",
                     Minecraft.getInstance().getUser().getName());
         });

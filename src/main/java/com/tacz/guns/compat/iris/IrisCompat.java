@@ -3,7 +3,6 @@ package com.tacz.guns.compat.iris;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.tacz.guns.GunMod;
 import com.tacz.guns.init.CompatRegistry;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
@@ -108,15 +107,6 @@ public final class IrisCompat {
      */
     public static boolean shouldDisableScopeMaskUnderShaderPack() {
         return ModList.get().isLoaded("sulkan");
-    }
-
-    public static synchronized void assignCommonEntityPipelinesToHandIfNeeded() {
-        if (!ModList.get().isLoaded(CompatRegistry.IRIS)) {
-            return;
-        }
-        assignPipelineToIris(RenderPipelines.ENTITY_CUTOUT, "HAND", "entity_cutout");
-        assignPipelineToIris(RenderPipelines.ENTITY_TRANSLUCENT, "HAND_TRANSLUCENT", "entity_translucent");
-        assignPipelineToIris(RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE, "HAND_TRANSLUCENT", "entity_translucent_emissive");
     }
 
     public static boolean isHandRendererActive() {
