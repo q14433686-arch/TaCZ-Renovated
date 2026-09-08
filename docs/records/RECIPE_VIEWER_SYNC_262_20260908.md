@@ -83,15 +83,22 @@ git diff --check: clean
 git grep RecipeViewerReloadBridge: no remaining reference
 ```
 
-本环境没有 `java`（`JAVA_HOME` 未设置且 PATH 内无 Java），因此
-`./gradlew compileJava` 在 Gradle 启动前即失败；不能把上述静态结果写成编译或实机 PASS。
+本地 sandbox 没有 `java`（`JAVA_HOME` 未设置且 PATH 内无 Java），故本地
+`./gradlew compileJava` 在 Gradle 启动前即失败；这只是本地环境限制，并非源码编译结果。
 
-## 5. 待执行的验收
+**CI 补充验证（2026-09-08）**：源码 commit
+[`29e15656b08df6a15f7ae4c18e97665cf691b4cd`](https://github.com/q14433686-arch/TaCZ_Renovated/commit/29e15656b08df6a15f7ae4c18e97665cf691b4cd)
+已在 Java 25 GitHub Actions 完成 [`compileJava`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34193430115)
+和完整 [`build`（含 jar artifact）](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34193429970)，均为 success；
+版本一致性和文档链接检查也在
+[`consistency`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34193429989) 中通过。
+这不替代真实游戏运行期验收。
+
+## 5. 待执行的运行期验收
 
 以下须在 Java 25 / NeoForge 26.2.0.64 环境完成，并记录实际 commit、JEI/REI 版本与完整日志：
 
-1. `./gradlew compileJava`（至少）和生产 jar build；确认默认 24 条 ammo JSON 在 server
-   datapack reload 后仍无 stream-codec/payload 编码异常。
+1. 确认默认 24 条 ammo JSON 在 server datapack reload 后仍无 stream-codec/payload 编码异常。
 2. **JEI only，单人**：以默认 ammo（含 `tacz:9mm`）按配方查询；24 条默认 ammunition
    workbench recipes 可见，材料 tag 有内容；打开 TaCZ Ammo Query，显示非空且相容枪械与
    gun index 一致。
