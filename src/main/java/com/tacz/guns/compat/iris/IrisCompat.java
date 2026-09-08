@@ -5,7 +5,6 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.compat.iris.legacy.IrisCompatLegacy;
 import com.tacz.guns.compat.iris.newly.IrisCompatNewly;
 import com.tacz.guns.init.CompatRegistry;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
@@ -22,8 +21,8 @@ import java.util.function.Supplier;
  * <p>2026-09-01 随 mesh GPU 移植补齐（姊妹 9ed6b93/2839843 语义）：
  * {@link #isRenderShadow()} 从恒 false 升级为版本感知（Iris 1.7.0 起走 newly 桥，
  * 之前走 legacy 桥 —— 两桥目前反射同一入口，分界保留以便未来分裂）；
- * {@link #assignCommonEntityPipelinesToHandIfNeeded()} 升级为 7 条管线一次性分配
- * 并带 {@code HAND_CUTOUT} 优先回退；新增 {@link #supportsHandFlushHook()} /
+ * （{@code assignCommonEntityPipelinesToHandIfNeeded()} 曾升级为 7 条管线一次性分配，
+ * 后经 Iris 源码核对确认为 no-op 已移除，见类内说明）；新增 {@link #supportsHandFlushHook()} /
  * {@link #assignMeshPipelineToHand(RenderPipeline)} /
  * {@link #assignMeshPipelineToEntity(RenderPipeline)} 供常驻 VBO 层使用。</p>
  */
@@ -34,8 +33,6 @@ public final class IrisCompat {
     private static Supplier<Boolean> isRenderingShadow = () -> false;
     private static final Set<RenderPipeline> ASSIGNED_SCOPE_PIPELINES = new HashSet<>();
     private static boolean loggedScopePipelineFailure;
-    private static boolean commonEntityPipelinesAssigned = false;
-    private static boolean commonEntityPipelinesAssignAttempted = false;
 
     private IrisCompat() {
     }
@@ -163,38 +160,19 @@ public final class IrisCompat {
         return false;
     }
 
-    /**
-     * Assign vanilla entity/item pipelines used inside the first-person hand pass to Iris' hand
-     * programs. Some Iris versions otherwise rediscover the same "perfect program match" every
-     * frame. Try this once per client session only, even if a subset fails.
-     */
-    public static synchronized void assignCommonEntityPipelinesToHandIfNeeded() {
-        if (!ModList.get().isLoaded(CompatRegistry.IRIS)) {
-            return;
-        }
-        if (commonEntityPipelinesAssigned || commonEntityPipelinesAssignAttempted) {
-            return;
-        }
-        commonEntityPipelinesAssignAttempted = true;
 
-        boolean ok = true;
-        ok &= assignPipelineToIrisAny(RenderPipelines.ENTITY_CUTOUT,
-                new String[]{"HAND_CUTOUT", "HAND"}, "entity_cutout");
-        ok &= assignPipelineToIrisAny(RenderPipelines.ENTITY_CUTOUT_CULL,
-                new String[]{"HAND_CUTOUT", "HAND"}, "entity_cutout_cull");
-        ok &= assignPipelineToIrisAny(RenderPipelines.ENTITY_TRANSLUCENT,
-                new String[]{"HAND_TRANSLUCENT"}, "entity_translucent");
-        ok &= assignPipelineToIrisAny(RenderPipelines.ENTITY_TRANSLUCENT_CULL,
-                new String[]{"HAND_TRANSLUCENT"}, "entity_translucent_cull");
-        ok &= assignPipelineToIrisAny(RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
-                new String[]{"HAND_TRANSLUCENT"}, "entity_translucent_emissive");
-        ok &= assignPipelineToIrisAny(RenderPipelines.ITEM_CUTOUT,
-                new String[]{"HAND_CUTOUT", "HAND"}, "item_cutout");
-        ok &= assignPipelineToIrisAny(RenderPipelines.ITEM_TRANSLUCENT,
-                new String[]{"HAND_TRANSLUCENT"}, "item_translucent");
-
-        commonEntityPipelinesAssigned = ok;
-    }
+    // 【已移除】assignCommonEntityPipelinesToHandIfNeeded()：
+    // 曾把 vanilla ENTITY_* / ITEM_* 管线经 IrisApi.assignPipeline(…, HAND*) 归到手部 program。
+    // 对照 Iris 源码（1.21.11 / 26.1 / 26.2 三条分支的 IrisPipelines.java 一致）：
+    //   1. 这些管线全部已在 IrisPipelines 静态表里预注册为 getCutout(p)/getTranslucent(p)，
+    //      两者【逐 draw 求值】—— HandRenderer.INSTANCE.isActive() 时返回 HAND_*，否则 ENTITIES_*；
+    //      手部 pass 里的抛壳/火光/枪体本来就走 gbuffers_hand，无需我们再 assign；
+    //   2. IrisPipelines.assignPipeline 对已注册管线直接抛 IllegalStateException("Shader already
+    //      assigned")，被我们当成功吞掉 —— 该调用从未生效，唯一可见效果是 ShaderKey.findBestMatch
+    //      在抛异常前打的几行 "Found perfect program match for minecraft:pipeline/…: HAND_CUTOUT" WARN；
+    //   3. 若某 Iris 版本恰好没预注册（put 成功），后果是把 vanilla 管线钉死成常量 HAND 程序，
+    //      世界里所有实体/物品都用错程序 —— 收益为零、风险为全局。
+    // assignPipeline 只保留给 tacz:pipeline/scope_* 等我们自己的管线。
 
     /**
      * The post-composite overlay hook ({@code IrisRenderingPipeline#finalizeLevelRendering} TAIL)

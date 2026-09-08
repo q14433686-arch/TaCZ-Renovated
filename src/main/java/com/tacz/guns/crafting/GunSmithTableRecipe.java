@@ -43,6 +43,20 @@ public class GunSmithTableRecipe implements Recipe<SingleRecipeInput> {
         return false;
     }
 
+    /**
+     * 枪械工作台配方只由 GunSmithTableMenu 消费，不进原版 3×3 合成格。
+     * 1.21.11+ 的 {@code RecipeManager#finalizeRecipeLoading} 对每条配方做
+     * {@code !recipe.isSpecial() && recipe.placementInfo().isImpossibleToPlace()} 判定，
+     * 命中即打一行 {@code "Recipe … can't be placed due to empty ingredients"} WARN ——
+     * 本类返回 {@link PlacementInfo#NOT_PLACEABLE}，所以此前每条 tacz:/lrtactical: 配方
+     * 都会刷一行（默认枪包约 250 行）。标成 special 后 RecipeManager 跳过这条 placement
+     * 检查；工作台自己的材料校验与合成不经过 placementInfo，行为不变。
+     */
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
     @Override
     public String group() {
         return "";

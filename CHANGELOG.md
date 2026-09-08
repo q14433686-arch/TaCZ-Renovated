@@ -3,6 +3,30 @@
 版本号格式：`1.1.8+neoforge.26.1.2.<标签>`。`+` 之后是 SemVer build metadata，
 因此枪包的 `tacz >= 1.1.8` 依赖检查照常通过（**禁止**改用 `-`，那是 pre-release，会静默不满足 `>=1.1.8`）。
 
+## 未发布（`26.1.2` 分支，R3 之后）
+
+> 以下为**静态修复、待实测**：由姊妹项目 refab 26.2(main) 侧针对玩家日志 `mclo.gs/39JqB2p`
+> 的可见 bug 修复移植而来，同代码、同机制，CI 编译门以本分支 compile-check 为准；
+> **运行期尚无维护者实机 PASS**。与「开光影世界全透明」问题**无关**，后者另行跟进。
+> 证据与适用性矩阵见
+> [`docs/records/VISIBLE_BUGS_39JqB2p_2612_20260908.md`](docs/records/VISIBLE_BUGS_39JqB2p_2612_20260908.md)。
+
+### 修复
+
+- **启动期约 250 行 `Recipe tacz:… can't be placed due to empty ingredients` WARN**：
+  1.21.11+ `RecipeManager#finalizeRecipeLoading` 对 `!isSpecial() && placementInfo().isImpossibleToPlace()`
+  的配方逐条告警，NeoForge 的 `RecipeManager` 补丁不改这条；`GunSmithTableRecipe` 现覆写
+  `isSpecial()=true`。工作台与 JEI/REI 均直接取 `TableRecipeManager`，配方列表与合成不变。
+- **切到格洛克 17 报 `Missing gun sound resource … p24_pi_golf17_stockskel_raise`**：
+  默认枪包 `glock_17.animation.json` 的 raise 段引用了不存在的音效（上游手误），已删该段 `sound_effects`。
+- **Iris 下六行 `Found perfect program match for minecraft:pipeline/entity_cutout: HAND_CUTOUT` WARN**：
+  移除 `IrisCompat#assignCommonEntityPipelinesToHandIfNeeded()` 及其两处调用点
+  （`GunModClient` 启动期 `enqueueWork` / `GunItemRendererWrapper` 手部 pass）与 `ShaderCompat` 门面。
+  经 Iris 1.21.11 / 26.1 / 26.2 三分支 `IrisPipelines` 源码核对：vanilla `ENTITY_*`/`ITEM_*` 管线本就
+  按「绘制时刻是否在手部 pass」逐 draw 分派，且对已注册管线 `assignPipeline` 直接抛
+  `Shader already assigned` 被我们吞掉 —— 该调用从未生效，只刷日志；`assignPipeline` 仍保留给
+  `tacz:pipeline/scope_*` 与 mesh 管线。这是**去掉一个 no-op**，不是新增光影兼容。
+
 ## 1.1.8+neoforge.26.1.2.R3 — 2026-09-07
 
 > 包含与姊妹项目 [TaCZ_Refabricated_Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial)

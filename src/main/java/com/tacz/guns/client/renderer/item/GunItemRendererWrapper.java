@@ -269,9 +269,9 @@ public class GunItemRendererWrapper extends AnimateGeoItemRenderer<BedrockGunMod
             if (RefitTransform.getOpeningProgress() != 0) {
                 gunModel.setRenderHand(false);
             }
-            // 第一人称手部 pass 下，预先让 Iris 把 vanilla entity/item 管线归到 hand program。
-            // 方法内部只尝试一次，避免 shader 下每帧重复匹配刷日志。
-            IrisCompat.assignCommonEntityPipelinesToHandIfNeeded();
+            // （已移除）此处曾调 IrisCompat.assignCommonEntityPipelinesToHandIfNeeded()：
+            // Iris 对 vanilla ENTITY_*/ITEM_* 管线本就按「绘制时刻是否在手部 pass」逐 draw 分派，
+            // 且对已注册管线 assignPipeline 直接抛 already assigned —— 该调用从未生效，只刷日志。
             // Reset the extraction-time aperture marker before the scope attachment and gun FX
             // are traversed synchronously by gunModel.submit.
             ScopeRenderTypes.beginViewmodelSubmission();
