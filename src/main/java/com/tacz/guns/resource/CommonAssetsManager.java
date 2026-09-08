@@ -8,9 +8,6 @@ import com.tacz.guns.GunMod;
 import com.tacz.guns.api.vmlib.LuaGunLogicConstant;
 import com.tacz.guns.api.vmlib.LuaLibrary;
 import com.tacz.guns.crafting.GunSmithTableIngredient;
-import com.tacz.guns.crafting.GunSmithTableRecipe;
-import com.tacz.guns.crafting.result.GunSmithTableResult;
-import com.tacz.guns.init.ModRecipe;
 import com.tacz.guns.network.NetworkHandler;
 import com.tacz.guns.network.message.ServerMessageSyncGunPack;
 import com.tacz.guns.resource.filter.RecipeFilter;
@@ -53,7 +50,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -313,14 +309,13 @@ public class CommonAssetsManager implements ICommonResourceProvider {
     @SubscribeEvent
     public static void onTagsUpdated(TagsUpdatedEvent event) {
         if (event instanceof TagsUpdatedEvent.ServerDataLoad && getInstance() != null && getInstance().recipeManager != null) {
-            List<GunSmithTableRecipe> recipes = getInstance().recipeManager.getRecipes().stream()
-                    .map(RecipeHolder::value)
-                    .filter(recipe -> recipe.getType() == ModRecipe.GUN_SMITH_TABLE_CRAFTING.get())
-                    .map(GunSmithTableRecipe.class::cast)
-                    .toList();
-            for (GunSmithTableRecipe recipe : recipes) {
-                recipe.init();
-            }
+            // Recipe results are deliberately NOT initialised here.  At this point in
+            // TagsUpdatedEvent the item Holders' data-components may not be bound yet,
+            // so new ItemStack(holder) would NPE ("Components not bound yet").
+            // RawGunTableResult / GunSmithTableResult were designed for lazy init:
+            // the client screen (GunSmithTableScreen) and server menu (GunSmithTableMenu)
+            // call recipe.init() just before the result is actually consumed, by which
+            // time all registries and components are fully ready.
             if (getInstance().gunIndex != null) {
                 GunMod.LOGGER.info("WP④ gun pack loaded: guns={} ammo={} attachments={} blocks={} recipes={}",
                         getInstance().gunIndex.getAllData().size(),
