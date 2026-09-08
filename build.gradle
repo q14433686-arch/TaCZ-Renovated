@@ -267,6 +267,32 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 
+// Dependency-free regression for the mesh/Iris render-pass boundary. Compile the actual policy
+// with a standalone harness; no client, OpenGL context, or additional test library is required.
+// 来源：refab 26.1.2 线 commit 9412e08（PR #92，Iris setup 生命周期修复）同形移植。
+def meshPassTestClasses = layout.buildDirectory.dir("classes/meshRenderPassTest")
+tasks.register("compileMeshRenderPassTest", JavaCompile) {
+    source files(
+            "src/main/java/cn/sh1rocu/tacz/compat/meshloader/render/MeshRenderPassBatches.java",
+            "tests/mesh-render-pass/MeshRenderPassBatchesTest.java")
+    classpath = files()
+    destinationDirectory = meshPassTestClasses
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+tasks.register("meshRenderPassTest", JavaExec) {
+    dependsOn "compileMeshRenderPassTest"
+    classpath = files(meshPassTestClasses)
+    mainClass = "cn.sh1rocu.tacz.compat.meshloader.render.MeshRenderPassBatchesTest"
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+tasks.named("check") {
+    dependsOn "meshRenderPassTest"
+}
+
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {
     module {

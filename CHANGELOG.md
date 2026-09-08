@@ -9,8 +9,11 @@
 > 参照 TaCZ_Refabricated_Unofficial 26.2 线 commit `1aca7c7`，该侧 CI 通过、
 > 实机同样未验证）。本线适用 A / C / D 三项；B（boat 白名单）与 E
 > （scope mask 诊断 WARN）经 grep 确认本线无对应代码路径、不适用。
+> 同日同步 refab PR #92 的后续独立修复（高模枪光影检视反射异常，
+> refab 26.1.2 线 commit `9412e08`，CI 通过、实机同样未验证）。
 > 版本号未动（非发布）；API 证据与验收清单见
-> [`docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md`](docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md)。
+> [`docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md`](docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md) 与
+> [`docs/records/MESH_GPU_IRIS_PASS_LIFETIME_12111_20260908.md`](docs/records/MESH_GPU_IRIS_PASS_LIFETIME_12111_20260908.md)。
 > 编译门走 CI；**运行期未实机验证。**
 
 ### 修复
@@ -39,6 +42,18 @@
   管线机制（`assignPipelineToIris(Any)`、`ASSIGNED_SCOPE_PIPELINES`）
   保留不动；本线无参照侧的两个一次性标志位可删（仅存在于 26.1.2 /
   refab 变体）。
+- **高模枪开光影检视时多数角度枪体偏黑、反射异常（独立后续修复，
+  refab PR #92 同形同步）**：Iris 的 `trySetup` 注入仅在
+  `!iris$isSetUp()` 时执行 setup（法线/逆 MV 上传 + albedo/PBR 通知），
+  到 `finishRenderPass` 才清除——本线 `PolyMeshGpuRenderer#drawList`
+  让全部骨骼共用一个自建 pass，第二根骨骼起
+  `iris_NormalMat` / 逆 MV 停留在第一根的矩阵上、换纹理不再触发 PBR
+  通知。修复：光影下**每根骨骼独立 pass**（新增纯 Java
+  `MeshRenderPassBatches.partition`；无光影保持单批次），MV 压栈、
+  VBO 缓存、pass 外资源准备、scope mask 配对全部保留。本线 Iris
+  1.21.11 分支源码（`11f566b`）两处直接核验。新增无第三方依赖的
+  `meshRenderPassTest` 生命周期模型回归（挂入 `check`/`build`，
+  覆盖 24 组检视旋转等）；**非实机 GL 测试**。
 
 ## 1.1.8+neoforge.1.21.11.R3（2026-09-07）
 
