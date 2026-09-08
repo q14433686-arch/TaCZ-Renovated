@@ -31,10 +31,6 @@ public final class ShaderCompat {
         return IrisCompat.assignPipelineToIris(pipeline, program, debugName);
     }
 
-    public static void assignCommonEntityPipelinesToHandIfNeeded() {
-        IrisCompat.assignCommonEntityPipelinesToHandIfNeeded();
-    }
-
     public static boolean shouldRenderInCurrentHandPhase(ItemStack stack) {
         return IrisCompat.shouldRenderInCurrentHandPhase(stack);
     }
