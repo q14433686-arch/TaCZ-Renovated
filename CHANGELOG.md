@@ -5,10 +5,11 @@
 
 ## 未发布（`26.1.2` 分支，R3 之后）
 
-> 以下为**静态修复、待实测**：由姊妹项目 refab 26.2(main) 侧针对玩家日志 `mclo.gs/39JqB2p`
-> 的可见 bug 修复移植而来，同代码、同机制，CI 编译门以本分支 compile-check 为准；
+> 以下为**静态修复、待实测**：前三项由姊妹项目 refab 26.2(main) 侧针对玩家日志 `mclo.gs/39JqB2p`
+> 的可见 bug 修复移植而来，第四项同步 refab 26.1.2 PR #92 的 mesh 光影修复；同代码、同机制，
+> CI 编译门以本分支 compile-check / build 为准；
 > **运行期尚无维护者实机 PASS**。与「开光影世界全透明」问题**无关**，后者另行跟进。
-> 证据与适用性矩阵见
+> 可见 bug 三项的证据与适用性矩阵见
 > [`docs/records/VISIBLE_BUGS_39JqB2p_2612_20260908.md`](docs/records/VISIBLE_BUGS_39JqB2p_2612_20260908.md)。
 
 ### 修复
@@ -26,6 +27,16 @@
   按「绘制时刻是否在手部 pass」逐 draw 分派，且对已注册管线 `assignPipeline` 直接抛
   `Shader already assigned` 被我们吞掉 —— 该调用从未生效，只刷日志；`assignPipeline` 仍保留给
   `tacz:pipeline/scope_*` 与 mesh 管线。这是**去掉一个 no-op**，不是新增光影兼容。
+- **高模枪开光影检视时多数角度偏黑 / 反射异常（Iris setup 的 RenderPass 生命周期）**：
+  同步姊妹 refab 26.1.2 PR #92 提交 `9412e08`。Iris 26.1 `MixinGlCommandEncoder#trySetup` 仅在
+  `!iris$isSetUp()` 时上传 `iris_NormalMat` / `iris_ModelViewMatInverse` 并通知 albedo/PBR，
+  到 `finishRenderPass` 才清除；本线 `PolyMeshGpuRenderer#drawList` 原本让全部骨骼共用一个 pass，
+  per-draw MV push/pop 只对第一根骨骼生效。现光影下**每根骨骼独立 pass**（无光影仍单批次），
+  保留 MV push/pop、VBO 缓存、pass 外资源准备与 scope mask 配对；不新增 Iris mixin、不翻转法线。
+  新增无依赖回归 `./gradlew meshRenderPassTest`（挂入 `check`），是生命周期模型回归而非实机 GL 测试。
+  更正 2026-09-01「仅压栈即与 26.2 等价」的旧结论。**性能与外观均未实测**；该症状早于上面三项，
+  不归因于删除 `assignCommonEntityPipelinesToHandIfNeeded`。证据见
+  [`docs/records/MESH_GPU_IRIS_PASS_LIFETIME_2612_20260908.md`](docs/records/MESH_GPU_IRIS_PASS_LIFETIME_2612_20260908.md)。
 
 ## 1.1.8+neoforge.26.1.2.R3 — 2026-09-07
 
