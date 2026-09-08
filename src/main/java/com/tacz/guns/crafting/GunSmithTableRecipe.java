@@ -43,6 +43,20 @@ public class GunSmithTableRecipe implements Recipe<SingleRecipeInput> {
         return false;
     }
 
+    /**
+     * Mark as special so vanilla {@code RecipeManager#finalizeRecipeLoading} does not
+     * WARN about {@code !isSpecial() && placementInfo().isImpossibleToPlace()}.
+     * Our table recipes are consumed by {@code TableRecipeManager}, not by the vanilla
+     * recipe book, so {@code placementInfo() = NOT_PLACEABLE} is intentional.
+     * The other effect of {@code isSpecial=true} — skipping placement in
+     * {@code unpackRecipeInfo} — only iterates {@code recipe.display()} (empty for us),
+     * so it is a no-op.
+     */
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
     @Override
     public String group() {
         return "";

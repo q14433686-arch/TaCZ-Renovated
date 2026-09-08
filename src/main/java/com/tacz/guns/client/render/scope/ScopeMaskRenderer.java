@@ -14,7 +14,10 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.tacz.guns.GunMod;
+import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.api.item.attachment.AttachmentType;
 import com.tacz.guns.client.model.bedrock.BedrockCube;
 import com.tacz.guns.client.model.bedrock.BedrockCubeBox;
 import com.tacz.guns.compat.iris.IrisCompat;
@@ -342,6 +345,30 @@ public final class ScopeMaskRenderer {
     }
 
     /**
+     * Check whether the local player's main hand currently holds a gun item with a
+     * scope attachment equipped. Used to gate the "empty geometry" diagnostic so
+     * it only fires when a scope is actually expected.
+     */
+    private static boolean isMainHandGunWithScope() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return false;
+        }
+        var stack = player.getMainHandItem();
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        if (!(stack.getItem() instanceof IGun iGun)) {
+            return false;
+        }
+        Identifier scopeId = iGun.getAttachmentId(stack, AttachmentType.SCOPE);
+        if (scopeId.equals(DefaultAssets.EMPTY_ATTACHMENT_ID)) {
+            scopeId = iGun.getBuiltInAttachmentId(stack, AttachmentType.SCOPE);
+        }
+        return !DefaultAssets.isEmptyAttachmentId(scopeId);
+    }
+
+    /**
      * 在阶段边界把当帧登记的目镜几何画进掩码 target。
      *
      * <p>无论成败，末尾都会清空当帧清单 —— 见 {@code finally}。
@@ -351,11 +378,14 @@ public final class ScopeMaskRenderer {
         // 【诊断】上一版实测「预览全黑 + 日志一行都没有」，原因是几何一个都没登记，
         // isEmpty() 直接 return，于是连个说法都没有。静默失败最难查，
         // 所以这里补一条：开着调试却收不到任何目镜几何时，明确说出来（只说一次）。
+        // 仅在主手持有带瞄准镜的枪时触发 —— 否则（例如手持剑、无瞄准镜的枪、空手）
+        // 没有目镜几何是正常的，不应告警。
         if (activeHandPass && RenderConfig.SCOPE_MASK_ENABLE.get()
-                && ScopeMaskGeometry.isEmpty() && !loggedEmpty) {
+                && ScopeMaskGeometry.isEmpty() && !loggedEmpty
+                && isMainHandGunWithScope()) {
             loggedEmpty = true;
-            GunMod.LOGGER.warn("[TACZ Scope] Mask enabled but no ocular geometry was registered this frame. "
-                    + "Either no scope is equipped/aimed, or ocular collection is broken.");
+            GunMod.LOGGER.warn("[TACZ Scope] Mask enabled and scope-equipped gun in main hand, "
+                    + "but no ocular geometry was registered this frame. Ocular collection is broken.");
         }
         if (!activeHandPass) {
             // 世界渲染那次直接跳过，且【不清空】清单 ——
