@@ -16,7 +16,6 @@ import com.tacz.guns.client.gui.GunRefitScreen;
 import com.tacz.guns.client.gui.GunSmithTableScreen;
 import com.tacz.guns.client.resource.ClientIndexManager;
 import com.tacz.guns.client.sound.SoundPlayManager;
-import com.tacz.guns.client.compat.RecipeViewerReloadBridge;
 import com.tacz.guns.network.message.ClientMessageSyncBaseTimestamp;
 import com.tacz.guns.network.message.ServerMessageCraft;
 import com.tacz.guns.network.message.ServerMessageLevelUp;
@@ -179,7 +178,11 @@ public final class ClientPacketHandlers {
     public static void onSyncGunPack(ServerMessageSyncGunPack message) {
         CommonNetworkCache.INSTANCE.fromNetwork(message.getCache());
         ClientIndexManager.reload();
-        RecipeViewerReloadBridge.requestReload();
+
+        // OnDatapackSyncEvent sends this cache before the vanilla recipe update and the
+        // requested NeoForge recipe-content payload. Those native packets trigger REI's
+        // reload and JEI's startup/restart respectively, after the indexes above are ready.
+        // Do not invoke REI's internal reload hook here: it races the normal REI reload.
 
         // Creative tab contents are built before the integrated server sends the gun-pack cache.
         // Rebuild them now so the tab receives initialized gun/ammo/attachment/workbench stacks

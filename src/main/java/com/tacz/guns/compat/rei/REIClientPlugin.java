@@ -17,6 +17,7 @@ import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
@@ -38,6 +39,9 @@ public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIC
 
     @Override
     public void registerCategories(CategoryRegistry registry) {
+        // REI can recreate this plugin after an on-server datapack reload. Do not retain
+        // workbench identifiers removed by the newly synchronized gun pack.
+        displays.clear();
         var map = TimelessAPI.getAllCommonBlockIndex();
         for (var entry : map) {
             BlockItem item = entry.getValue().getBlock();
@@ -53,15 +57,24 @@ public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIC
 
     @Override
     public void registerDisplays(DisplayRegistry registry) {
-        if (Minecraft.getInstance().level == null) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+
+        // Gun-pack materials are intentionally lazy while tags are loading. This must use the
+        // active client RegistryAccess before GunSmithTableDisplay converts inputs to REI entries;
+        // EntryIngredients.ofIngredient does not accept a null delayed ingredient.
+        RegistryAccess registryAccess = minecraft.level.registryAccess();
         List<GunSmithTableRecipe> recipes = new java.util.ArrayList<>();
         for (var e : com.tacz.guns.resource.CommonAssetsManager.get().getAllTableRecipes()) {
             if (e.getValue() != null && e.getValue().getResult() != null) {
                 GunSmithTableRecipe r = new GunSmithTableRecipe(e.getKey(), e.getValue());
                 try {
                     r.init();
+                    r.resolveIngredients(registryAccess);
                 } catch (RuntimeException ex) {
-                    GunMod.LOGGER.error("Failed to init gun smith table recipe {} for REI, skipping it", e.getKey(), ex);
+                    GunMod.LOGGER.error("Failed to prepare gun smith table recipe {} for REI, skipping it", e.getKey(), ex);
                     continue;
                 }
                 recipes.add(r);
@@ -73,7 +86,16 @@ public class REIClientPlugin implements me.shedaniel.rei.api.client.plugins.REIC
                 List<GunSmithTableRecipe> recipeList = blockIndex.getFilter().filter(recipes, GunSmithTableRecipe::getId);
                 recipeList.removeIf(recipe ->
                         blockIndex.getData().getTabs().stream().noneMatch(tab -> Objects.equals(tab.id(), recipe.getResult().getGroup())));
-                recipeList.forEach(recipe -> registry.add(new GunSmithTableDisplay(recipe, entry)));
+                for (GunSmithTableRecipe recipe : recipeList) {
+                    try {
+                        registry.add(new GunSmithTableDisplay(recipe, entry));
+                    } catch (RuntimeException ex) {
+                        // A malformed third-party recipe must not prevent the later attachment
+                        // and ammo-query displays from registering.
+                        GunMod.LOGGER.error("Failed to register gun smith table recipe {} for REI, skipping it",
+                                recipe.getId(), ex);
+                    }
+                }
             });
         }
 
