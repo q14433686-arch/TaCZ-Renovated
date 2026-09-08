@@ -370,7 +370,7 @@ public final class PolyMeshGpuRenderer {
         // 光影下 GPU 路径默认【走 vanilla RenderType 管道】而非自定义 pass：
         // RenderType.prepare() + PreparedRenderType.drawFromBuffer() 用的是
         // entityCutout 的 RenderPipeline —— 该管线已由
-        // IrisCompat.assignCommonEntityPipelinesToHandIfNeeded() 归入 Iris HAND
+        // Iris automatically assigns vanilla entity pipelines to HAND
         // program（抛壳/火光同一条兼容链路），Iris 按管线拦截，枪体因此拿到
         // 光影光照。顶点常驻 VBO 不变，每帧仍只写 O(骨骼) 个 DynamicTransforms。
         // MeshGpuUnderShaders=true 时改走自定义 pass（绕开光影管线，无光影光照，
@@ -722,7 +722,7 @@ public final class PolyMeshGpuRenderer {
      *
      * <h2>为什么这条路在 Iris 下能拿到光影光照</h2>
      * Iris 按 {@code RenderPipeline} 对象拦截绘制（本仓证据链：抛壳/火光用 vanilla
-     * ENTITY_CUTOUT 提交，经 {@code assignCommonEntityPipelinesToHandIfNeeded()}
+     * ENTITY_CUTOUT submits through vanilla RenderType
      * 归入 HAND program 后光影下渲染正确）。这里用 {@code RenderTypes.entityCutout}
      * —— 管线正是那条链路已注册的 ENTITY_CUTOUT，Iris 对它的接管方式与 vanilla
      * 立方体/collector poly 完全一致。
@@ -743,7 +743,6 @@ public final class PolyMeshGpuRenderer {
      * UV2=量化光照，语义同 collector 写入。
      */
     private static void drawListViaRenderType(List<DrawEntry> draws) {
-        IrisCompat.assignCommonEntityPipelinesToHandIfNeeded();
         long totalIndices = drawViaRenderTypeCore(draws, true);
         if (!loggedFirstIrisDraw) {
             loggedFirstIrisDraw = true;
@@ -768,7 +767,7 @@ public final class PolyMeshGpuRenderer {
      * IrisPipelines.java 26.2 分支 assignToMain/getCutout/assignPipeline 三段。）
      *
      * <p>与手部变体唯一的语义差异：<b>不调</b>
-     * {@code assignCommonEntityPipelinesToHandIfNeeded()} —— 那是手部 pass 的
+     * custom HAND assignment no longer needed
      * 专项修复（把抛壳用的 vanilla 管线归入 Iris HAND program）。世界 pass 里
      * ENTITY_CUTOUT 就是 vanilla 世界实体在用的管线，Iris 对它的默认接管
      * （gbuffers_entities 链路）正是我们想要的；这里主动去动管线归属反而可能

@@ -110,15 +110,6 @@ public final class IrisCompat {
         return ModList.get().isLoaded("sulkan");
     }
 
-    public static synchronized void assignCommonEntityPipelinesToHandIfNeeded() {
-        if (!ModList.get().isLoaded(CompatRegistry.IRIS)) {
-            return;
-        }
-        assignPipelineToIris(RenderPipelines.ENTITY_CUTOUT, "HAND", "entity_cutout");
-        assignPipelineToIris(RenderPipelines.ENTITY_TRANSLUCENT, "HAND_TRANSLUCENT", "entity_translucent");
-        assignPipelineToIris(RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE, "HAND_TRANSLUCENT", "entity_translucent_emissive");
-    }
-
     public static boolean isHandRendererActive() {
         if (!ModList.get().isLoaded(CompatRegistry.IRIS) || !isUsingRenderPack()) {
             return false;

@@ -21,6 +21,7 @@ import com.tacz.guns.compat.iris.IrisCompat;
 import com.tacz.guns.config.client.RenderConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -29,6 +30,10 @@ import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 import java.util.Optional;
+import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.api.item.gun.AbstractGunItem;
+import com.tacz.guns.api.item.attachment.AttachmentType;
+import com.tacz.guns.api.DefaultAssets;
 
 /**
  * 【Step 2 正式版】把当帧所有目镜几何画进离屏掩码。
@@ -351,8 +356,22 @@ public final class ScopeMaskRenderer {
         // 【诊断】上一版实测「预览全黑 + 日志一行都没有」，原因是几何一个都没登记，
         // isEmpty() 直接 return，于是连个说法都没有。静默失败最难查，
         // 所以这里补一条：开着调试却收不到任何目镜几何时，明确说出来（只说一次）。
+        // 前置：主手必须是装了瞄具的枪，避免空手或无瞄具时误报
+        boolean mainHandHasScopeGun = false;
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player != null) {
+            ItemStack mainHand = player.getMainHandItem();
+            if (mainHand.getItem() instanceof IGun) {
+                IGun gun = (IGun) mainHand.getItem();
+                Identifier scopeId = gun.getAttachmentId(mainHand, AttachmentType.SCOPE);
+                if (!DefaultAssets.isEmptyAttachmentId(scopeId)) {
+                    mainHandHasScopeGun = true;
+                }
+            }
+        }
         if (activeHandPass && RenderConfig.SCOPE_MASK_ENABLE.get()
-                && ScopeMaskGeometry.isEmpty() && !loggedEmpty) {
+                && ScopeMaskGeometry.isEmpty() && !loggedEmpty
+                && mainHandHasScopeGun) {
             loggedEmpty = true;
             GunMod.LOGGER.warn("[TACZ Scope] Mask enabled but no ocular geometry was registered this frame. "
                     + "Either no scope is equipped/aimed, or ocular collection is broken.");
