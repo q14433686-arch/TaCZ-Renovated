@@ -3,6 +3,43 @@
 版本号格式：`1.1.8+neoforge.<mc>.<标签>`。`+` 之后是 SemVer build metadata，
 因此枪包的 `tacz >= 1.1.8` 依赖检查照常通过（**禁止**改用 `-`，那是 pre-release，会静默不满足 `>=1.1.8`）。
 
+## 未发布（1.21.11 线，2026-09-08 起累积；**静态修复、待实测**）
+
+> 玩家日志 `mclo.gs/39JqB2p` 可见 bug 修复轮（六线移植指导 2026-09-08；
+> 参照 TaCZ_Refabricated_Unofficial 26.2 线 commit `1aca7c7`，该侧 CI 通过、
+> 实机同样未验证）。本线适用 A / C / D 三项；B（boat 白名单）与 E
+> （scope mask 诊断 WARN）经 grep 确认本线无对应代码路径、不适用。
+> 版本号未动（非发布）；API 证据与验收清单见
+> [`docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md`](docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md)。
+> 编译门走 CI；**运行期未实机验证。**
+
+### 修复
+
+- **配方书日志被 `Recipe ... can't be placed due to empty ingredients`
+  WARN 刷屏（约 250 行）**：`GunSmithTableRecipe` 实现
+  `Recipe<SingleRecipeInput>` 但无展示用 ingredients，客户端配方书同步
+  后无法排布即记 WARN。修复：`isSpecial()` 返回 `true`——按 NeoForge
+  1.21.11 官方文档语义，special 配方不再经配方书同步到客户端，WARN
+  源头消失（既有 `PlacementInfo.NOT_PLACEABLE` 只管排布、不阻止同步，
+  故单独不够）。
+- **默认枪包 Glock 17 的 `draw` 动画引用不存在的音效
+  `p24_pi_golf17_stockskel_raise`（动画静默丢失该音效）**：源树
+  `glock_17.animation.json` 的 `draw` 尾部 `sound_effects` 块 effect 名
+  在资源树中不存在（全文件仅此一处），删除该块并同步去掉
+  `bones` 收尾尾逗号保持 JSON 合法（`json.load` 校验通过）；
+  `grep -c golf17` 修复后 = 0。
+- **Iris 光影下 `Found perfect program match ... HAND_CUTOUT` 等
+  WARN（且存在把 vanilla 管线永久钉死到 hand program 的全局风险）**：
+  删除 `IrisCompat#assignCommonEntityPipelinesToHandIfNeeded`
+  （`ENTITY_CUTOUT→HAND` 等 3 条 vanilla 管线的手动 assign）及其两个
+  调用点（`GunModClient#onClientSetup`、
+  `GunItemRendererWrapper#renderFirstPerson`）与 `ShaderCompat`
+  façade、失效 `RenderPipelines` import。Iris 1.10.x 对这三条管线
+  已有静态表 + 按 draw 分派，手动 assign 只有副作用。scope / mesh
+  管线机制（`assignPipelineToIris(Any)`、`ASSIGNED_SCOPE_PIPELINES`）
+  保留不动；本线无参照侧的两个一次性标志位可删（仅存在于 26.1.2 /
+  refab 变体）。
+
 ## 1.1.8+neoforge.1.21.11.R3（2026-09-07）
 
 > 回传 26.1.2 线「静默失效事件处理器」修复轮（26.1.2 线 commit `e5828f0` +

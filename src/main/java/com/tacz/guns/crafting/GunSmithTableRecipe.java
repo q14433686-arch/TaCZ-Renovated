@@ -34,6 +34,19 @@ public class GunSmithTableRecipe implements Recipe<SingleRecipeInput> {
         return false;
     }
 
+    /**
+     * Prevents the vanilla recipe book from syncing this recipe to the client:
+     * it has no displayable ingredients and only serves the gun smith table.
+     * Without this, the client recipe book logs
+     * "Recipe ... can't be placed due to empty ingredients" for it.
+     * (NeoForge 1.21.11 docs, Custom Recipes: "When true, will prevent the
+     * recipe from being synced within the recipe book or awarded on use/unlock.")
+     */
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
     @Override
     public ItemStack assemble(SingleRecipeInput input, HolderLookup.Provider registries) {
         return ItemStack.EMPTY;
