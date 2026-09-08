@@ -4,9 +4,9 @@
 - **范围**：默认枪包的 24 条 `data/tacz/recipe/ammo/*.json` 弹药枪匠台配方；JEI / REI 的
   工作台查询以及内置 **TaCZ Ammo Query**。该问题同时影响单人与远程专服客户端，单机成功
   不能替代专服验收。
-- **证据级别**：NeoForge 26.2.0-stable 官方源码/patch、JEI 30.24 源码、REI 26.2.820
-  源码及 Architectury 21.0.2 源码静态闭环；本沙盒没有 Java/JDK，尚未执行 Gradle 或游戏内
-  测试，**不宣称 PASS**。
+- **证据级别**：NeoForge 26.1.2/26.2 stable 官方源码/patch、JEI 29.29/30.24、REI
+  26.1.819/26.2.820、Fabric 26.2 对照源码及 Architectury 21.0.2 已作静态闭环；Java 25 CI
+  的 `compileJava` 和完整 build 已通过，但尚未执行游戏内验收，**不宣称运行期 PASS**。
 
 ## 1. 复现与根因
 
@@ -30,6 +30,34 @@
 `RoughlyEnoughItemsCoreClient#reloadPlugins(MutableLong, ReloadStage)`；日志证明该调用会在
 REI 自己由 recipe update 启动的异步重载尚未结束时嵌套，出现 “found 1 existing reload task”。
 反射调用返回只表示请求已发出，不表示 REI 重建完成，不能作为完成判据。
+
+### 1.1 反证对照：26.1.2 与 Fabric 不是同一条故障路径（2026-09-09 补记）
+
+用户确认 NeoForge 26.1.2 和 Fabric 各线均未复现。源码对照支持这个观察：这不是“NeoForge
+天生不能显示 TaCZ 配方”，也不能把专服当根因。
+
+1. **NeoForge 26.1.2 的同名 viewer 插件和 REI bridge 与 26.2 base 的功能代码几乎相同**；
+   两个 NeoForge stable 的 `OnDatapackSyncEvent`、`PlayerList` 发送顺序和
+   `RecipeContentPayload` API 也都已存在。因此不存在“26.2 才有该 NeoForge API”的解释。
+2. 真正的 26.2 port 差异在 `CommonAssetsManager#onTagsUpdated`：26.1.2 遍历 native
+   `GunSmithTableRecipe` 并调用 `recipe.init()`；26.2 的用户日志证明同一调用点已经早到
+   item Holder components 绑定之前（`Components not bound yet`）。而
+   `GunSmithTableResult#init()` 在 `finally` 中置 `initialized=true`，故第一次失败会把该
+   recipe 永久固定为 EMPTY。26.2 base 必须删掉这段过早初始化，不能为“追平 26.1.2”而恢复它。
+3. Fabric 26.2 在 `CommonLifecycleEvents.TAGS_LOADED` 回调中以其 `RegistryAccess` 调
+   `CommonAssetsManager#onReload(..., false)`，在那里初始化 native recipes；其
+   `ServerMessageSyncGunPack#doSync` 还在 cache/index 安装后显式触发 **JEI Fabric** 的
+   `JeiLifecycleEvents.AFTER_RECIPES_UPDATED` 和 REI refresh。这个时序与 NeoForge 26.2 的
+   `TagsUpdatedEvent.ServerDataLoad` / 原生 REI recipe-update 不同，不能机械搬运反射 bridge。
+4. 此次 NeoForge 日志同时真实记录了 REI 的 `existing reload task` 和随后
+   `GunSmithTableDisplay` null NPE；后者会中断同一 plugin 的余下 display 注册，故足以让默认
+   ammo 和 Ammo Query 一并消失，即使默认 24 条 JSON 本身有效。修复保留 cache 为权威数据，
+   仅在安全网络边界补 native content 和正式 viewer lifecycle，而非假定 loader 有缺陷。
+
+**待用真实客户端做的最小 A/B**：同一 mods/枪包配置分别运行 26.2 base（仅含“移除过早
+`init()`”）和本修复；若 base 已恢复全部查询，则把 viewer/lifecycle 的额外防护标为回归保险，
+不得声称它是唯一根因；若 base 仍失败，则保存两端日志，按第 5 节 JEI-only / REI-only / 双装
+矩阵定位剩余链路。
 
 ## 2. 26.2 API / 时序证据
 
