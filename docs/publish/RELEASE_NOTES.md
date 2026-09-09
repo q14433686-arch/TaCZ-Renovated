@@ -1,49 +1,54 @@
-<!-- release-version: 1.1.8+neoforge.26.1.2.R3 -->
-# TaCZ: Renovated — Minecraft 26.1.2 / NeoForge（R3）
+<!-- release-version: 1.1.8+neoforge.26.1.2.R3-hotfix -->
+# TaCZ: Renovated — Minecraft 26.1.2 / NeoForge（R3-hotfix）
 
 > **非官方社区移植，不是 TaCZ 官方发布，也未获 TACZ Dev Team 审核或背书。
 > 本移植的问题请提交到本仓库，不要打扰原作者。**
+>
+> 本公告只覆盖相对于已发布 **R3** 的热修。R3 的实机验收结论不自动延伸到本次新增改动。
 
 ## 环境
 
 - Minecraft：**26.1.2**
 - NeoForge：**26.1.2.x**（开发基于 **26.1.2.97**）
 - Java：**25+**
-- Mod：**`1.1.8+neoforge.26.1.2.R3`**
+- Mod：**`1.1.8+neoforge.26.1.2.R3-hotfix`**
 - 必需前置：**无**
 
-不同 Minecraft 版本的文件不能混用；这不是 1.21.11 的 R3 包。
+不同 Minecraft 版本的文件不能混用；这不是 1.21.11 的版本。
 
-## 本次变化（相对 R2）
+## 本次变化（相对 R3）
 
-- **Lua `string` 标准库恢复**：共用脚本环境补载内置 LuaJ 3.0.1 的 `StringLib`，
-  修复 `string.format` 等函数因缺库而报 nil 错误，并恢复字符串方法式调用。
-  不升级为 Figura fork，不承诺其全部行为完全等价。
-- **创造模式搜索同步的防御性修复**：枪包同步重建标签内容后同步重建搜索树；
-  保留 26.1.2 的触发时序与实现，不将其他版本的复现过程当成本线的复现日志。
-- **事件处理器接线修复**：跨维度枪械状态重置、服务端 BURST / 异步任务 tick、
-  配置加载/热重载、重生自动装弹、子弹射钟/碎玻璃、界面快捷栏遮挡与持枪挖掘拦截。
-- **收枪动画修复**：恢复旧物品的渲染保留窗口，并处理快速连续切换时的窗口接管。
-- **发布工具**：按本线 tag 构建、L0 门禁、Lua 回归及 commit / SHA-256 留痕的
-  Release 工作流已由维护者上线，默认创建草稿，不覆盖已有 Release 或同名资产。
+### 修复
 
-详细变化见本线 [CHANGELOG](https://github.com/q14433686-arch/TaCZ_Renovated/blob/26.1.2/CHANGELOG.md)。
+- **工作台配方启动日志刷屏**：将枪械工作台的自定义配方标记为 special，消除
+  `Recipe tacz:… can't be placed due to empty ingredients` 的无意义 WARN；工作台、JEI/REI
+  仍直接使用原有的 `TableRecipeManager`，配方列表与合成逻辑不变。
+- **格洛克 17 缺失 raise 音效报错**：删除默认枪包动画中对不存在
+  `p24_pi_golf17_stockskel_raise` 音效的引用，切枪时不再输出对应的 `Missing gun sound resource`。
+- **Iris 手部管线无效 WARN**：移除对已注册 vanilla `ENTITY_*` / `ITEM_*` 管线的重复分配调用，
+  不再输出 `Found perfect program match … HAND_CUTOUT`；Iris 原有的按 draw 手部/实体管线分派
+  和 TaCZ 的 scope / mesh 自定义管线保持不变。这是删除无效调用，不是新增光影兼容声明。
+- **高模枪在 Iris 光影下检视偏黑、反射异常**：GPU mesh 渲染在光影启用时改为每根骨骼独立
+  `RenderPass`，使 Iris 为每根骨骼重新设置法线/模型视图状态并通知对应 albedo/PBR 材质；无光影
+  时仍保持单批次。保留 VBO 缓存、MV push/pop、scope mask 与资源准备流程。
 
-## 验证范围
+详细机制、适用性与复测清单见本线
+[CHANGELOG](https://github.com/q14433686-arch/TaCZ_Renovated/blob/26.1.2/CHANGELOG.md)、
+[可见日志修复记录](https://github.com/q14433686-arch/TaCZ_Renovated/blob/26.1.2/docs/records/VISIBLE_BUGS_39JqB2p_2612_20260908.md)
+及 [mesh 光影记录](https://github.com/q14433686-arch/TaCZ_Renovated/blob/26.1.2/docs/records/MESH_GPU_IRIS_PASS_LIFETIME_2612_20260908.md)。
 
-- **本线 R3 修复：维护者实机测试 PASS（2026-09-07）**。本条按维护者本轮确认记录，
-  不是把 1.21.11 的 PASS 自动复制过来；确认来源与本线 R3 构建结果见
-  [R3 签收记录](https://github.com/q14433686-arch/TaCZ_Renovated/blob/26.1.2/docs/records/R3_CONFIRMATION_2612_20260907.md)。
-- Lua 修复另有独立 Java 25 / LuaJ 红绿回归，涵盖字符串 API、require/preload、连续
-  创建脚本环境；47 个内置 Lua 脚本可编译（**独立测试不执行游戏逻辑**）。发布门禁另有
-  17 项离线回归，不代替实机测试。
-- **构建与发布验收分开记录**：R3 编译/完整构建以签收记录中的实际 CI 提交为准；
-  正式发布仍须在最终 tag 上执行 build 和 L0。工作流已上线不表示发布上传已运行。
-- **不扩大 PASS 范围**：没有新增枪包逐版本、光影/视角模组组合或部署形态的逐项记录。
-  LAN 双人加入、原生专服等发布检查仍按发布规范逐项核对；不能用历史 R1/R2 记录
-  代替最终构建的验收。混合服、代理、面板等环境没有因此获得新的兼容性保证。
+## 验证范围与已知边界
 
-## 安装与已知边界
+- 上述代码已通过本线 CI 的 compile-check / 全量 build；新增
+  `./gradlew meshRenderPassTest` 已挂入 `check`，覆盖 RenderPass 生命周期的模型回归。
+  该回归不是实际 Iris / OpenGL 集成测试。
+- **本热修尚无维护者实机 PASS。** 发布前仍须在最终构建上测试：启动日志、格洛克 17 切换、
+  Iris 下第一人称枪体/抛壳/火光、多材质高模枪检视、scope/PIP，以及无光影回归和性能。
+- 已发布 R3 的实机 PASS 只适用于其包含的 R3 修复；不能据此宣称本热修、所有枪包、
+  所有光影包或所有部署形态已验证。
+- 本次不处理「开光影世界全透明」问题；它与本次日志修复无关，仍需单独跟进。
+
+## 安装与兼容范围
 
 将对应版本的 jar 放入 `mods/`，先备份世界和枪包。现代枪包放入 `tacz/`；
 旧布局包备份后放入 `tacz_backup/` 并执行 `/tacz convert`。联机枪包需双端安装，
