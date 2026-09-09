@@ -24,6 +24,67 @@
   的 GitHub Actions `compileJava` 与完整 build 已通过；**不把 Fabric 的 CI 或实机结果写成
   NeoForge 运行期 PASS**。Iris 三档和 recipe-viewer 单人/远程专服非回退矩阵均列在该记录中。
 
+### 修复：JEI / REI 枪匠台弹药配方与 Ammo Query 全部消失（2026-09-08）
+
+- **症状**：进世界 / 进远程专服后，JEI、REI 查不到任何枪匠台弹药配方，内置 TaCZ
+  Ammo Query 一并消失；服务端枪包同步日志 `recipes=758` 正常，默认包 24 条
+  `data/tacz/recipe/ammo/*.json`（`tacz:gun_smith_table_crafting`）本身有效。单人
+  与远程专服客户端同受影响，单机成功不能替代专服验收。
+- **根因**（两条独立且相互叠加的故障链）：①REI 侧
+  `GunSmithTableIngredient#getIngredient()` 对尚未按 level `RegistryAccess` 解析的
+  raw tag 材料允许返回 `null`，旧 `GunSmithTableDisplay` 构造器把它直接交给
+  `EntryIngredients.ofIngredients(...)` 抛异常，一次失败即中断
+  `REIClientPlugin#registerDisplays`，后续 attachment 与 Ammo Query display 全部未
+  登记；②自定义 `ServerMessageSyncGunPack` 只安装 cache/client indexes，并不会触发
+  JEI 重建——JEI 30.24 的 NeoForge `StartEventObserver` 以 `RecipesReceivedEvent` 为
+  启动屏障（已启动且有同步配方时用同一事件 restart），cache payload 到达 ≠ JEI 已
+  刷新。叠加 26.2 port 差异：`CommonAssetsManager#onTagsUpdated` 的 `recipe.init()`
+  早到 item Holder components 绑定之前（`Components not bound yet`），且
+  `GunSmithTableResult#init()` 在 `finally` 置 `initialized=true`，首次失败把配方永久
+  钉成 EMPTY；旧 REI bridge 还反射调用 REI 内部 `reloadPlugins`，与 REI 自己由
+  recipe-update 启动的异步重载嵌套竞争（日志「found 1 existing reload task」），不能
+  作为完成判据。
+- **修法**：枪包同步内在排好权威 cache 之后，经 `OnDatapackSyncEvent#sendRecipes`
+  请求原生枪匠台配方内容，使 JEI 走受支持的 `RecipesReceivedEvent` 启动/重启
+  生命周期、REI 走正常原版 recipe-update 生命周期；原生配方序列化前先完成 lazy
+  枪匠台产出初始化，lazy 材料/tag 配料先按客户端 `RegistryAccess` 解析再注册进
+  JEI/REI；REI 对未解析/null 输入按空槽容忍，并隔离单个坏 recipe/display 使其不能
+  阻断后续 Ammo Query 注册；删除反射 REI reload bridge；移除上述过早 `init()`。
+  修复保留 cache 为权威数据，仅在安全网络边界补 native content 与正式 viewer
+  lifecycle，不假定 loader 有缺陷。
+- 证据、NeoForge 26.2 API/时序核对表、26.1.2 与 Fabric 反证对照以及 JEI-only /
+  REI-only / 双装验收矩阵见 `docs/records/RECIPE_VIEWER_SYNC_262_20260908.md`。
+  `compileJava` 与完整 build CI 通过；**游戏内验收未执行，不宣称运行期 PASS**。
+
+### 修复：移交单可见 bug 四项——配方书 WARN 刷屏 / Glock 幻影音效 / Iris 日志噪音 / 镜外 WARN 误报（2026-09-08）
+
+- **来源**：玩家日志 `mclo.gs/39JqB2p` 可见 bug 移交单（PR #51）。本线适用
+  A / C / D / E 四项；B（boat 白名单）经 grep 确认本线无对应代码路径，不适用。
+  与「光影使世界透明」问题无关。
+- **A · 配方书 WARN 刷屏**：`GunSmithTableRecipe#isSpecial()` 返回 `true`。枪匠台
+  配方由 `TableRecipeManager` 消费、不走原版配方书，`placementInfo() = NOT_PLACEABLE`
+  是有意为之；此前 vanilla `RecipeManager#finalizeRecipeLoading` 据此逐条 WARN
+  `can't be placed due to empty ingredients`（玩家日志约 250 行）。`isSpecial=true`
+  的另一效果（`unpackRecipeInfo` 跳过布置）只遍历 `recipe.display()`（本模组为空），
+  故为 no-op。
+- **C · glock_17 draw 动画幻影音效**：删 `glock_17.animation.json` 中 `draw` 动画
+  尾部的 `sound_effects` 块——被引用的音效资源 `p24_pi_golf17_stockskel_raise`
+  不存在；其他动画音效均以 `tacz:glock_17/...` 形式正确引用。JSON 经解析校验，
+  其余动画键不受影响。
+- **D · Iris「Shader already assigned」日志噪音**：删
+  `IrisCompat#assignCommonEntityPipelinesToHandIfNeeded`（方法本体、失效
+  `RenderPipelines` import + `ShaderCompat` 门面 + `GunModClient#enqueueWork`、
+  `GunItemRendererWrapper` 第一人称渲染路径、`PolyMeshGpuRenderer` 三处调用点）。
+  Iris 26.2 初始化时已自动把 `entity_cutout` / `entity_translucent` 归类进 HAND
+  程序，手动 `assignPipeline` 冗余且刷日志。scope / mesh 管线机制
+  （`assignPipelineToIris(Any)`、`ASSIGNED_SCOPE_PIPELINES`）保留不动；移除方法全仓
+  零残留引用。
+- **E · scope mask 空几何 WARN 误报收窄**：该 WARN 原本只要 mask 启用且未收集到
+  ocular 几何就触发——空手、持剑、持机瞄枪也误报。新增 `isMainHandGunWithScope()`
+  门：仅在主手持有带瞄具枪械、本应收集到几何却失败时才告警
+  （`ScopeMaskRenderer`）。
+- 编译门 CI（`compileJava`）通过；四项均为静态修复，**实机待测**。
+
 ## 1.1.8+neoforge.26.2.R3 — 2026-09-07
 
 R3 为 R2（2026-09-01 发布）之后的三类修复热修：①枪包脚本环境缺 Lua `string`
