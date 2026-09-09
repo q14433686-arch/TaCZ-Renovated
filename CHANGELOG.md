@@ -3,18 +3,16 @@
 版本号格式：`1.1.8+neoforge.<mc>.<标签>`。`+` 之后是 SemVer build metadata，
 因此枪包的 `tacz >= 1.1.8` 依赖检查照常通过（**禁止**改用 `-`，那是 pre-release，会静默不满足 `>=1.1.8`）。
 
-## 未发布（1.21.11 线，2026-09-08 起累积；**静态修复、待实测**）
+## 1.1.8+neoforge.1.21.11.R3-hotfix（2026-09-08）
 
-> 玩家日志 `mclo.gs/39JqB2p` 可见 bug 修复轮（六线移植指导 2026-09-08；
-> 参照 TaCZ_Refabricated_Unofficial 26.2 线 commit `1aca7c7`，该侧 CI 通过、
-> 实机同样未验证）。本线适用 A / C / D 三项；B（boat 白名单）与 E
-> （scope mask 诊断 WARN）经 grep 确认本线无对应代码路径、不适用。
-> 同日同步 refab PR #92 的后续独立修复（高模枪光影检视反射异常，
-> refab 26.1.2 线 commit `9412e08`，CI 通过、实机同样未验证）。
-> 版本号未动（非发布）；API 证据与验收清单见
-> [`docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md`](docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md) 与
-> [`docs/records/MESH_GPU_IRIS_PASS_LIFETIME_12111_20260908.md`](docs/records/MESH_GPU_IRIS_PASS_LIFETIME_12111_20260908.md)。
-> 编译门走 CI；**运行期未实机验证。**
+> R3 之后的热修。含两批内容：① 玩家日志 `mclo.gs/39JqB2p` 可见 bug 三项
+> （A/C/D；B/E 本线无路径）+ 高模枪光影检视反射修复（refab PR #92 同形）；
+> ② 回传 26.2 线 [PR #52](https://github.com/q14433686-arch/TaCZ_Renovated/pull/52)
+> 的 JEI/REI 枪匠台弹药配方与 Ammo Query native recipe-sync。
+> API 证据：[`docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md`](docs/records/VISIBLE_BUGS_39JQB2P_12111_20260908.md)、
+> [`docs/records/MESH_GPU_IRIS_PASS_LIFETIME_12111_20260908.md`](docs/records/MESH_GPU_IRIS_PASS_LIFETIME_12111_20260908.md)、
+> [`docs/records/RECIPE_VIEWER_SYNC_12111_20260908.md`](docs/records/RECIPE_VIEWER_SYNC_12111_20260908.md)。
+> 编译门走 CI；**运行期未实机验证，不宣称 PASS。**
 
 ### 修复
 
@@ -54,6 +52,22 @@
   1.21.11 分支源码（`11f566b`）两处直接核验。新增无第三方依赖的
   `meshRenderPassTest` 生命周期模型回归（挂入 `check`/`build`，
   覆盖 24 组检视旋转等）；**非实机 GL 测试**。
+- **JEI / REI 默认弹药枪匠台配方与 TaCZ Ammo Query 不同步 / 登记中断**
+  （回传 26.2 PR #52；本线按 NeoForge 21.11.45 / JEI 27.30.0.76 /
+  REI 21.11.816 重核 API）：
+  - `OnDatapackSyncEvent` 在发送权威枪包 cache 后
+    `sendRecipes(GUN_SMITH_TABLE_CRAFTING)`，走原生 `RecipeContentPayload` →
+    `RecipesReceivedEvent`，让 JEI 正式 start/restart（仅装客户端 viewer
+    时也不依赖服务端装 JEI）；
+  - `GunSmithTableSerializer` 编码前 `recipe.init()`，避免 lazy 结果写成
+    `ItemStack.EMPTY`；
+  - JEI / REI 插件在登记前 `resolveIngredients(level.registryAccess())`，
+    与工作台 UI 一致；
+  - `GunSmithTableDisplay` 对未解析材料用 `EntryIngredient.empty()`，
+    不再把 null 丢给 REI（一次异常会连坐后续 Ammo Query）；
+  - 删除反射 `RecipeViewerReloadBridge`（`reloadPlugins`），避免与 REI
+    原生 START/END 生命周期抢跑。
+  待验收矩阵见 `docs/DEDICATED_SERVER_TEST.md` L3 #12–#14。
 
 ## 1.1.8+neoforge.1.21.11.R3（2026-09-07）
 

@@ -12,26 +12,27 @@ TaCZ 枪械 mod 面向较新的 Minecraft 版本的 NeoForge 移植，代码开�
 谱系可审计。游戏语义源自姊妹项目
 [TaCZ Refabricated Unofficial](https://github.com/q14433686-arch/TaCZ_Refabricated_Unofficial)（Fabric 姊妹项目）。
 
-### 本次更新（相对上一版）
+### 本次更新（相对 R3）
 
-- **修复：第三方枪包脚本一使用 `string.*` 即崩服**（实测报告：Phoenix Gunpack
-  持枪即 `Ticking player` 崩溃循环；官方 TaCZ 上正常）——脚本环境补回 Lua
-  `string` 库，`string.format` 与 `("…"):method()` 写法恢复可用；
-- **修复：创造模式搜索栏搜不到任何物品**——枪包同步后补搜索树重建；
-- **修复：七个事件处理器「静默失效」批量接线**——跨维度后枪械状态机不刷新、
-  服务端 BURST 连发只打出第一发、第三方生物自定义爆头 AABB 与交互键黑白名单
-  配置不加载等 8 项缺陷；
-- 上一版起的内容（镜内 text_show 修复、ScopePip 镜内画中画/二次渲染、内置
-  TacZ Mesh Loader（GPU 烘焙）、镜内裁手与低倍率豁免、Iris 时域隔离）见仓库
+- **修复：配方书 `empty ingredients` WARN 刷屏**——枪匠台配方标为 special，不再进配方书同步；
+- **修复：默认 Glock 17 拔枪动画引用不存在音效**——去掉无效 `sound_effects` 块；
+- **修复：Iris 光影下 HAND_CUTOUT 等误 assign WARN**——删除对 vanilla 管线的手动 HAND 指派；
+- **修复：高模枪开光影检视时枪体偏黑 / 反射异常**——光影下每根骨骼独立 render pass；
+- **修复：JEI / REI 默认弹药枪匠台配方与 TaCZ Ammo Query 不同步或登记中断**——走 native
+  recipe-sync 生命周期，解析 lazy 材料，REI 容忍空材料格，移除会抢跑的反射 reload 桥；
+- 上一版（R3）起的内容（Lua `string` 库崩服热修、创造模式搜索栏、静默失效事件处理器接线，
+  以及 R2 的镜内 text_show / ScopePip / Mesh Loader 等）见仓库
   [CHANGELOG](https://github.com/q14433686-arch/TaCZ-Renovated/blob/1.21.11/CHANGELOG.md)。
 
 ### 实测覆盖（如实分级）
 
-✅ **本次三批修复**：维护者实机测试 PASS（含 Phoenix Gunpack 崩溃场景复现与复测）
+⚠️ **本次 R3-hotfix**：源码级 / API 证据闭环；**运行期未实机验证，不宣称 PASS**
+✅ **R3 三批修复**：维护者实机测试 PASS（含 Phoenix Gunpack 崩溃场景复现与复测）
 ✅ **历史基线**（日志归档于源码仓库 docs/records/）：单机 · 局域网双客户端 ·
 专用服务器（生产 jar + 双客户端，含 /give、工作台合成、枪包热重载）
 ❌ **本次未重跑**：面板服、Velocity 代理、混合服（Youer/Arclight 系）、Geyser——
 这些环境的问题**须先在原生 NeoForge 专服复现**后再提交。
+JEI-only / REI-only / 双 viewer 专服矩阵见 `docs/DEDICATED_SERVER_TEST.md` L3 #12–#14。
 
 ### 安装
 
