@@ -19,8 +19,8 @@
 | Controllable | ✅ 可用 | 0.26.0 | 手柄开火/瞄准/换弹按键 |
 | Shoulder Surfing Reloaded | ✅ 可用 | 5.0.10 | 越肩视角插件与准星 |
 | Iris | ✅ 可用 | — | 光影下的瞄具与第一人称渲染（反射接入，不装则不加载） |
-| JEI | ✅ 可用 | 29.29.0.77 | 配方查看 |
-| REI | ✅ 可用 | 26.1.2 对应版 | 配方查看 |
+| JEI | ✅ 可用 | 27.30.0.76 | 配方查看（native `RecipesReceivedEvent` 生命周期；枪匠台弹药配方与 Ammo Query 见 `records/RECIPE_VIEWER_SYNC_12111_20260908.md`，运行期矩阵待专服验收） |
+| REI | ✅ 可用 | 21.11.816 | 配方查看（native recipe-update START/END；不再反射调用内部 `reloadPlugins`；同上记录） |
 | Carry On | ✅ 可用 | — | 搬运枪械工作台等方块 |
 | FirstPerson Model | ✅ 可用 | — | 第一人称身体模型共存 |
 | Punchy! | ✅ 可用 | 2.7d | 可选 mixin 让出；持枪/近战/手雷时 Punchy 独立手臂与位移让出给 TACZ |

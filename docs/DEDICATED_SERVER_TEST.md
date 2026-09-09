@@ -135,6 +135,9 @@ cd srv && java -Xmx2G -jar <安装器生成的启动 jar 或 run.sh> nogui
 | 9 | 双端装 PAL 后重跑 #3/#5 | 第三人称动画在**联机**下（r17-r22 的 PASS 场景是否含联机未记录，需补验） | |
 | 10 | 开 F3+B 后重跑 #4 | 爆头盒线渲染（r16 修复）在联机下的回归 | |
 | 11 | （可选）netem/clumsy 加 100ms+ 延迟重跑 #3-#5 | 高延迟下开火/换弹手感与状态回滚 | |
+| 12 | **JEI only**：A/B 分别查默认 `tacz:9mm` 等弹药 | `OnDatapackSyncEvent#sendRecipes(tacz type)` → `RecipeContentPayload` → `RecipesReceivedEvent` → JEI restart；24 条默认 ammo 工作台配方、材料 tag 与 TaCZ Ammo Query 的相容枪械均可见。服务端不装 JEI 也必须测。 | |
+| 13 | **REI only**：A/B 分别查同一批弹药，再在线 `/tacz reload` | cache payload → 原生 `ClientboundUpdateRecipesPacket` → Architectury `ClientRecipeUpdateEvent` → REI START/END；24 条默认 ammo 配方与 Ammo Query 均可见，日志无 `GunSmithTableDisplay` null / existing reload task。服务端不装 REI 也必须测。 | |
+| 14 | **JEI + REI**：重跑 #12/#13 | 两个 viewer 同时在场时独立登记；任一 viewer 不得打断另一个的工作台配方或 Ammo Query。 | |
 
 ## L4. 服务器形态矩阵（L2/L3 通过后按优先级推进）
 

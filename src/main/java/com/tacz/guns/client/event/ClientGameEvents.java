@@ -8,7 +8,6 @@ import com.tacz.guns.api.event.common.EntityHurtByGunEvent;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.client.animation.screen.RefitTransform;
-import com.tacz.guns.client.compat.RecipeViewerReloadBridge;
 import com.tacz.guns.client.input.AimKey;
 import com.tacz.guns.client.input.ConfigKey;
 import com.tacz.guns.client.input.CrawlKey;
@@ -66,7 +65,6 @@ public final class ClientGameEvents {
         AimKey.cancelAim(mc);
         ShootKey.autoShoot(mc, true);
         SoundPlayManager.onClientTick(mc);
-        RecipeViewerReloadBridge.tick(mc);
     }
 
     @SubscribeEvent

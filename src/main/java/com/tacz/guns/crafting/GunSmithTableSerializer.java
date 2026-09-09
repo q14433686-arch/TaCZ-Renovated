@@ -119,6 +119,11 @@ public final class GunSmithTableSerializer {
 
                 @Override
                 public void encode(RegistryFriendlyByteBuf buffer, GunSmithTableRecipe recipe) {
+                    // OnDatapackSyncEvent can request this recipe type for NeoForge's native
+                    // RecipeContentPayload. Results loaded from a gun pack are intentionally
+                    // lazy, so resolve them at this post-reload network boundary rather than
+                    // serializing ItemStack.EMPTY into the client recipe content.
+                    recipe.init();
                     buffer.writeIdentifier(recipe.getId());
                     buffer.writeInt(recipe.getInputs().size());
                     for (GunSmithTableIngredient ingredient : recipe.getInputs()) {
