@@ -85,7 +85,10 @@ git grep RecipeViewerReloadBridge: no remaining reference
 
 本地 sandbox 没有 `java`（`JAVA_HOME` 未设置且 PATH 内无 Java），故本地
 `./gradlew compileJava` 在 Gradle 启动前即失败；这只是本地环境限制，并非源码编译结果。
-推送后由 GitHub Actions Java 环境验证编译。
+
+**CI 补充验证（2026-09-08）**：源码 commit
+`48c534e5a4c9523fb184e9c41ed22869323b7240` 已在 GitHub Actions 完成
+`compileJava` success（ci-log `8dc9c162…`）。这不替代真实游戏运行期验收。
 
 ## 5. 待执行的运行期验收
 
