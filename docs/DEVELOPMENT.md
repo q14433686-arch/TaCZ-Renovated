@@ -75,13 +75,17 @@ LRTactical 额外纪律：
 - Iris 自定义 pipeline 必须分类到 HAND，并在每个非 scope draw 重置 mask mode。
 - OpenGL 正常不等于 Vulkan/Iris PASS；每个 backend 单独记录结果。
 
-调试 mask：
+调试 Iris scope mask（改 `IrisScopeMaskInjection` 后必须重载 shader pack）：
 
 ```toml
 ScopeMaskDebug=true
+IrisScopeMaskInjection="HAND_ONLY" # 默认；另有 ALL / OFF 用于对照
 ```
 
-左上角应出现随瞄具移动的白色 ocular 投影。
+左上角应出现随瞄具移动的白色 ocular 投影。`HAND_ONLY` 只给名称含 `hand` 的
+Iris fragment program 注入掩码分支；`ALL` 是 sampler-unit 安全路径的诊断对照；
+`OFF` 不注入且光影下不会发生 scope clipping。每档的预期与日志判读见
+[`records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md`](records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md)。
 
 ## 6. 版本与模板
 

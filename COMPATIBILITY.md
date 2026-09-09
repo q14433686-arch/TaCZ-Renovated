@@ -33,7 +33,7 @@
 | JEI | `30.24.0.176`，`mezz.jei:jei-26.2-neoforge:30.24.0.176` | 工作台、配件/弹药查询、subtype、native recipe-sync lifecycle | 30.24 source/API 已核；未实机 |
 | REI | `26.2.820` NeoForge，Curse file `8271756` | 工作台、配件/弹药查询、subtype、native recipe-update lifecycle | source/API 已核；未实机 |
 | Architectury API | `21.0.2` NeoForge | REI 26.2.820 的编译/运行依赖 | 按 REI 26.2 source 原始 pin |
-| Iris | `1.11.2` NeoForge 26.2 | 反射 API、HAND/HAND_TRANSLUCENT、shadow、linked-fragment mask bridge | OpenGL source/API 已核；实机反馈 2026-09-02（用户，Iris 1.11.2 + ComplementaryUnbound r5.8.1）：PIP 二次渲染与目镜掩码孔径裁切行为确认（两项均非逐条矩阵 PASS） |
+| Iris | `1.11.2` NeoForge 26.2 | 反射 API、HAND/HAND_TRANSLUCENT、shadow、`ShaderCreator#link` 内 fragment `createShader` 直拦截、per-program mask sampler | Iris 26.2 common source/descriptor 已核；新 `HAND_ONLY` / `ALL` / `OFF` 策略已静态接入，CI 与本线运行期矩阵待跑。2026-09-02 用户反馈只证明旧桥当时的 PIP/mask 行为，**不是**本次 Fix-A 的 NeoForge PASS。 |
 | Carry On | `2.11.0` NeoForge 26.2 | 多格工作台 root/companion、放置预检、携带模型 BlockId | 2.11.0 descriptor 已核；未实机 |
 | First-person Model | **无 NeoForge 26.2 文件**；2.7.2 只有 Fabric 26.2，NeoForge 止于 26.1.2 | 反射 ActivationHandler 已按 2.7.2 API 预留 | 当前不列为可安装兼容；桥保持 dormant |
 | Not Enough Animations | **无 NeoForge 26.2 文件**；1.12.4 的 NeoForge 文件止于 26.1.2 | 直接手臂提交 guard 已按 1.12.4 API 预留 | 当前不列为可安装兼容；桥保持 dormant |
@@ -63,10 +63,16 @@
   `me.shedaniel.math` 类型由 Cloth/REI 依赖提供。REI 的 native recipe-update
   START/END 生命周期已核；不再调用内部的 `reloadPlugins(MutableLong,ReloadStage)`，避免
   与其异步任务竞争。该 source 明确 pin Cloth `26.2.155`、Architectury `21.0.2`。
-- **Iris 26.2**：branch commit
-  `8f3a7a35d780fe80c8cd3c8517f3fa3c4df3f18a`。已核 API revision 3、
-  `assignPipeline`、`isRenderingShadowPass`、HandRenderer 三个查询，以及
-  `ShaderCreator#link` 的 fragment-source 参数位置。
+- **Iris 26.2 / 1.11.2**：Iris `26.2` branch commit
+  `48d0c259895487b281651de1bc058bf7d6814daa` declares `MOD_VERSION = "1.11.2"`.
+  Its shared `common` `ShaderCreator#link` invokes
+  `createShader(String, ShaderType, String)` for the fragment source; the exact
+  target descriptor is
+  `(.../ShaderCreator;createShader(Ljava/lang/String;L.../ShaderType;Ljava/lang/String;)I)`.
+  This is the loader-neutral target used by the NeoForge optional mixin. The release
+  asset itself was not used as a byte-hash assertion; compile and runtime remain separate
+  gates. Full port/disposition and test protocol:
+  [`docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md`](docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md).
 - **Carry On 2.11.0**：tag `v2.11.0` →
   `b82a8ccfe8b4a9af98b7485826c2162e8faaae81`。已核：
   `PickupHandler#tryPickUpBlock(ServerPlayer,BlockPos,Level,BiFunction)`、
@@ -95,9 +101,7 @@
 | 后端 | 状态 |
 |---|---|
 | OpenGL（无 Iris） | 阶段边界离屏 ocular mask 已接入；GPU 未实测 |
-| OpenGL + Iris 1.11.2 | HAND pipeline 分类、linked-fragment dormant branch 与逐 draw mask uniform bridge 已接入；GPU 未实测。本轮两处改动：① mask uniform/采样器改为 `trySetup` RETURN + `iris$setupState` RETURN 双写入点，不再依赖与 Iris 的 mixin 应用顺序；② 凸包孔径填充改为斜率空间、不再读投影 UBO（旧实现开光影后必抛 `Buffer is not readable` 而每帧回退描摹）。**复测**：2026-09-02
-用户实机（Iris 1.11.2 + ComplementaryUnbound r5.8.1）开镜与 PIP 二次渲染行为确认；
-逐条矩阵未跑 |
+| OpenGL + Iris 1.11.2 | 双写入点（`trySetup` RETURN + `iris$setupState` RETURN）、斜率空间凸包 mask 与 per-draw reset 保留；Fix-A 另在 `link` 的 fragment `createShader` 调用用 `@ModifyArgs` 直接取得 name+source，默认只改名含 `hand` 的程序。`IrisScopeMaskInjection=HAND_ONLY` / `ALL` / `OFF` 由 Cloth Config 提供；每 program 扫描 active sampler 分配空闲 unit、无空闲即 mode=0、并在 debug 时输出 sampler/validate 证据。**本线新代码未 GPU 实测**；2026-09-02 用户反馈是旧实现的 PIP/mask 行为确认，不外推为 Fix-A PASS。见 [同步记录](docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md)。 |
 | Vulkan | `earlyWindowControl=false` 后用户启动 PASS；低倍准星 containment 报告 FAIL，已拆分 reticle-only/full-viewmodel mask 修复，当前 HEAD 待复测 |
 | 其他 shader replacement / Aperture | 没有已核 bridge 时走普通未掩码回退；未作为硬依赖接入 |
 
@@ -126,7 +130,7 @@
 4. Controllable + Framework：绑定、按住连射、换弹/近战/瞄准、各 fire mode 震动。
 5. Shoulder Surfing 5.0.7：双手枪判定、adaptive aim、free-look、准星。
 6. JEI only / REI only / JEI+REI：默认包的 24 条 ammo 工作台配方、TaCZ Ammo Query、第三方包、远程同步后刷新、工作台 catalyst；专服端不安装 viewer 的场景也要分别验证。
-7. Iris 1.11.2：无光影/有光影、HAND solid/translucent、shadow、mask mode 泄漏、水/粒子/云。
+7. Iris 1.11.2：无光影/有光影、HAND solid/translucent、shadow、mask mode 泄漏、水/粒子/云；光影下依次验证 `HAND_ONLY`、`ALL`、`OFF`，每次改档重载 shader pack，并保存 debug sampler/validate 日志。不要把别的 NeoForge 版本或 Fabric 分支的结果外推到本线。
 8. Carry On 2.11.0：A/B/C 工作台任一半格搬起、完整放下、阻挡时原子失败、BlockId 模型。
 9. Vulkan：阶段边界 target 切换、mask debug 预览、无 device loss、镜身/准星/火光裁剪。
 10. LRTactical：单机与专服分别验证 tooltip/HUD、投掷/近战/消耗品、烟雾/闪光、
