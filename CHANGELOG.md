@@ -3,6 +3,27 @@
 版本号格式：`1.1.8+neoforge.<mc>.<标签>`。`+` 后是 SemVer build metadata，不参与
 `>=1.1.8` 排序；禁止改用 `-neoforge...` pre-release。
 
+## Unreleased
+
+### 同步 Fabric 26.2(main) `1b4af9f`：Iris scope-mask Fix-A（2026-09-09）
+
+- 将 Iris 26.2 scope-mask 注入从旧的「link 参数 / 全程序」路径改为在
+  `ShaderCreator#link` 内直接截取 fragment `createShader(name, ShaderType, source)`：默认
+  `HAND_ONLY` 只处理 `hand_cutout` / `gbuffers_hand` 等名称含 `hand` 的 HAND 程序，世界程序
+  保持不注入；`ALL` 与 `OFF` 留作明确的诊断/因果对照。旧的跨方法 ThreadLocal 中间桥已被
+  排除，不能复活。
+- 为每个被注入 program 扫描 active sampler 后选取空闲 texture unit；无 unit 时 fail-closed
+  为 mode 0；绑定恢复 active unit 并清 sampler object。加入 pipeline-rebuild cache reset、
+  HAND/world fragment 计数、零 HAND 告警和 `ScopeMaskDebug` sampler/`glValidateProgram`
+  诊断，避免版本 skew 静默失效。
+- 新增 NeoForge `IrisScopeMaskInjection=HAND_ONLY|ALL|OFF` 配置、Cloth Config Render
+  selector 与中英文说明。改档必须重载 shader pack。
+- Fabric `dee2578d..1b4af9f` 的 57 commits / 58 paths（含先前已等价的 mesh、put-away、
+  visible-bug 集以及所有 docs/CI/artifact 的不适用理由）逐项记录于
+  `docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md`。本地沙箱尚无 JDK，但该代码 commit
+  的 GitHub Actions `compileJava` 与完整 build 已通过；**不把 Fabric 的 CI 或实机结果写成
+  NeoForge 运行期 PASS**。Iris 三档和 recipe-viewer 单人/远程专服非回退矩阵均列在该记录中。
+
 ## 1.1.8+neoforge.26.2.R3 — 2026-09-07
 
 R3 为 R2（2026-09-01 发布）之后的三类修复热修：①枪包脚本环境缺 Lua `string`

@@ -13,6 +13,17 @@ public class RenderConfig {
     public static ModConfigSpec.BooleanValue HEAD_SHOT_DEBUG_HITBOX;
     /** 瞄准镜镜内裁剪（目镜掩码）总开关。默认<b>开启</b>。 */
     public static ModConfigSpec.BooleanValue SCOPE_MASK_ENABLE;
+    /**
+     * Iris 26.2 scope-mask GLSL injection policy.  HAND_ONLY is the safe default:
+     * only hand/gun programs receive the branch, leaving terrain/world source identical to
+     * stock Iris.  ALL is the legacy diagnostic path; OFF disables shader-pack clipping.
+     */
+    public enum IrisScopeMaskInjection {
+        HAND_ONLY,
+        ALL,
+        OFF
+    }
+    public static ModConfigSpec.EnumValue<IrisScopeMaskInjection> IRIS_SCOPE_MASK_INJECTION;
     /** 调试：将当帧离屏目镜掩码显示在屏幕左上角。 */
     public static ModConfigSpec.BooleanValue SCOPE_MASK_DEBUG;
     /** 用目镜投影凸包填充稀疏板条模型的孔径。 */
@@ -155,6 +166,13 @@ public class RenderConfig {
         SCOPE_MASK_ENABLE = builder
                 .comment("Whether to clip scope bodies, reticles and viewmodel effects using the 26.2 off-screen ocular mask.")
                 .define("ScopeMaskEnable", true);
+        IRIS_SCOPE_MASK_INJECTION = builder
+                .comment("Which Iris shader programs receive the TACZ scope-mask clip branch.",
+                        "HAND_ONLY (default): hand/gun programs only; terrain and world programs remain byte-identical to stock Iris.",
+                        "ALL: legacy behaviour (every program, with a conflict-free texture unit).",
+                        "OFF: never inject (scope clipping is disabled under shader packs).",
+                        "Takes effect when the shader pipeline is rebuilt; reload or toggle the shader pack.")
+                .defineEnum("IrisScopeMaskInjection", IrisScopeMaskInjection.HAND_ONLY);
         SCOPE_MASK_DEBUG = builder
                 .comment("Debug: draw the off-screen ocular mask at the top-left corner.")
                 .define("ScopeMaskDebug", false);

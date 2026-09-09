@@ -19,6 +19,7 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -52,16 +53,24 @@ public class GunModPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        if (Minecraft.getInstance().level == null) return;
-        // 与 GunSmithTableScreen 一致，改用 CommonAssetsManager.get()。
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+
+        // Match GunSmithTableScreen: the network cache retains raw tag ingredients until a
+        // level RegistryAccess is available. Resolving those inputs here keeps JEI's recipe
+        // lookup entries in sync with the table UI instead of registering null ingredients.
+        RegistryAccess registryAccess = minecraft.level.registryAccess();
         List<GunSmithTableRecipe> recipes = new java.util.ArrayList<>();
         for (var e : com.tacz.guns.resource.CommonAssetsManager.get().getAllTableRecipes()) {
             if (e.getValue() != null && e.getValue().getResult() != null) {
                 GunSmithTableRecipe r = new GunSmithTableRecipe(e.getKey(), e.getValue());
                 try {
                     r.init();   // 解析 raw result，否则 getResult() 恒为 EMPTY
+                    r.resolveIngredients(registryAccess);
                 } catch (RuntimeException ex) {
-                    GunMod.LOGGER.error("Failed to init gun smith table recipe {} for JEI, skipping it", e.getKey(), ex);
+                    GunMod.LOGGER.error("Failed to prepare gun smith table recipe {} for JEI, skipping it", e.getKey(), ex);
                     continue;
                 }
                 recipes.add(r);
