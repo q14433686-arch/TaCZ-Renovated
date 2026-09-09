@@ -48,7 +48,7 @@
   `ShaderCreator#link` 内 fragment `createShader` 的 `@ModifyArgs` 取代旧的全程序/
   跨方法桥，默认 `HAND_ONLY`，另有 `ALL` / `OFF` 对照与 per-program sampler-unit
   安全层。用户 2026-08-26 的「高倍目镜未裁」是旧实现的历史反馈，不能用来判定
-  Fix-A；本线仍待 CI + 实机三档矩阵。见
+  Fix-A；JDK 25 CI `compileJava` + full build 已通过，仍待实机三档矩阵。见
   `docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md`。
 - 开镜视角滞后：给 `xBob` 乘瞄准系数被用户与姊妹仓两边否决，已回到官方未缩放
   `* 0.1`。高倍/组合镜症状仍在。同一审计文档。

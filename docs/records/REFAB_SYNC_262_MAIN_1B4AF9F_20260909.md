@@ -25,10 +25,12 @@ PR #86/#87（mesh draw-time clip、put-away `keep()`）和 PR #94（用户日志
 另分支 patch、发布渠道和 lineage 文字不是本线游戏功能；有价值的机制、诊断和测试条件
 被转写到本记录，而不是把另一仓的 PASS 署到 NeoForge 名下。
 
-**验证等级（截至本记录）**：静态源代码/资源 JSON/descriptor 对照完成；本沙箱最初没有
-JDK，下载 JDK 的 release-asset 与 apt 源均不可用，因此没有本地 Gradle 或游戏内运行。
-Fabric 的 Fix-A 实机结论只是外部旁证，**不是本线 PASS**。提交后 CI 和 §7 的 NeoForge
-实机矩阵仍是必经门。
+**验证等级（截至本记录）**：静态源代码/资源 JSON/descriptor 对照完成；本地沙箱仍没有
+可用 JDK（release-asset 与 apt 源不可用），但 GitHub Actions 已在 commit `882349c` 上通过
+[`compile-check #52`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34362842774)
+的 `compileJava` 和 [`build #52`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34362842790)
+的完整 `./gradlew build` / mixin / language / artifact gate。游戏内 Iris 与 recipe-viewer 矩阵
+仍未跑；Fabric 的 Fix-A 实机结论只是外部旁证，**不是本线运行期 PASS**。
 
 ### 标记说明
 
@@ -234,7 +236,7 @@ mode 2；现有 `hasMaskThisFrame()` / `hadMaskLastFrame()` 快路径仍保留�
 
 ## 7. 验证计划（尚未宣称 PASS）
 
-### 7.1 静态检查已完成
+### 7.1 静态与 CI 检查已完成
 
 - `git diff --check`：通过；无 conflict marker。
 - 两份语言 JSON：解析通过，`iris_scope_mask_injection` 与 `.desc` 在中英文均存在。
@@ -242,14 +244,26 @@ mode 2；现有 `hasMaskThisFrame()` / `hadMaskLastFrame()` 快路径仍保留�
 - 26.2 两份 pending CI workflow：按 §3 逐字 `cmp` 通过。
 - `IrisScopeMaskState` 已检查包含 allocator、unit exhaustion fail-closed、cache reset、
   active-texture restore、`glBindSampler(unit, 0)` 与 debug validation 标记。
+- GitHub Actions（commit `882349c`）：
+  [`compile-check #52`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34362842774)
+  **success**（Temurin 25，`./gradlew compileJava`）；
+  [`build #52`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34362842790)
+  **success**（mixin config integrity、registration、lang-key parity、version consistency、
+  full Gradle build 与 jar artifact upload）；
+  [`consistency`](https://github.com/q14433686-arch/TaCZ_Renovated/actions/runs/34362843053)
+  **success**。Actions 的 Node 20 / setup-java v4 deprecation annotation 是 action 维护提示，
+  不是本次源码失败。
 
-### 7.2 构建 / mixin gate
+### 7.2 已关闭的构建 gate 与仍待运行的 gate
 
-1. 在 JDK 25 环境运行 `./gradlew compileJava` 与 `./gradlew build`（或等待本分支 CI）。
-2. 检查 optional Iris mixin 只在 Iris loading list 存在时装载；无 Iris 的客户端和专服不得
-   解析 Iris target。`IrisCompatMixinPlugin` 的 NeoForge loader gate 不改。
-3. 运行 `bash scripts/check_release_consistency.sh --strict`，并保留 CI run URL/日志作为本线
-   证据。Fabric 的 success/failure log 不可替代这一步。
+1. **已关闭**：上述 JDK 25 CI `compileJava` + 完整 `build`。本地沙箱没有 JDK，不重复伪造
+   本机 Gradle 结果。
+2. **已关闭**：CI 已检查 mixin config 完整性/注册性和中英文 language-key parity；
+   `IrisCompatMixinPlugin` 的 NeoForge loading-list gate 保持不变。
+3. **仍待关闭**：带/不带 Iris 的实际客户端和 dedicated server 启动，以及 §7.3 的 shader
+   runtime matrix。编译成功不等于 optional mixin 在真实 Iris 上已 PASS。
+4. 本地 `bash scripts/check_release_consistency.sh --strict` 已通过；CI URL/日志是本线证据。
+   Fabric 的 success/failure log 仍不可替代本线上述 CI。
 
 ### 7.3 Iris 运行时三档矩阵（客户端，单人即可；不涉及“专服专有”归因）
 

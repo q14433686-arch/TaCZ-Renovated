@@ -20,9 +20,9 @@
   selector 与中英文说明。改档必须重载 shader pack。
 - Fabric `dee2578d..1b4af9f` 的 57 commits / 58 paths（含先前已等价的 mesh、put-away、
   visible-bug 集以及所有 docs/CI/artifact 的不适用理由）逐项记录于
-  `docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md`。本沙箱尚无 JDK，当前仅完成
-  静态/descriptor 核对；**不把 Fabric 的 CI 或实机结果写成 NeoForge PASS**。Iris 三档和
-  recipe-viewer 单人/远程专服非回退矩阵均列在该记录中。
+  `docs/records/REFAB_SYNC_262_MAIN_1B4AF9F_20260909.md`。本地沙箱尚无 JDK，但该代码 commit
+  的 GitHub Actions `compileJava` 与完整 build 已通过；**不把 Fabric 的 CI 或实机结果写成
+  NeoForge 运行期 PASS**。Iris 三档和 recipe-viewer 单人/远程专服非回退矩阵均列在该记录中。
 
 ## 1.1.8+neoforge.26.2.R3 — 2026-09-07
 
